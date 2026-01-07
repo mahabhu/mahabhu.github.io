@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid of Buttons</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: auto;
+            background-color: #f0f0f0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(150, 5px);
+            grid-gap: 0px;
+        }
+        .grid button {
+            width: 5px;
+            height: 5px;
+            background-color: white;
+            border: none;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        #resetButton, #downloadButton {
+            margin-top: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="grid" id="grid"></div>
+    <button id="resetButton">Reset Grid</button>
+    <button id="downloadButton">Download as PNG</button>
+    <script>
+        const grid = document.getElementById('grid');
+        const columns = 150; // Number of columns
+        const rows = 200; // Number of rows
+        const gridSize = columns * rows;
+
+        // Load saved grid state from localStorage, if it exists
+        const savedGridState = localStorage.getItem('gridState');
+        const gridState = savedGridState ? JSON.parse(savedGridState) : new Array(gridSize).fill('white');
+
+        // Create the grid and set button colors based on the saved state
+        for (let i = 0; i < gridSize; i++) {
+            const button = document.createElement('button');
+            button.style.backgroundColor = gridState[i];
+            button.addEventListener('click', () => {
+                const newColor = button.style.backgroundColor === 'black' ? 'white' : 'black';
+                button.style.backgroundColor = newColor;
+                gridState[i] = newColor;
+                saveGridState();
+            });
+            grid.appendChild(button);
+        }
+
+        // Save the current grid state to localStorage
+        function saveGridState() {
+            localStorage.setItem('gridState', JSON.stringify(gridState));
+        }
+
+        // Reset all buttons to white and save the new state
+        document.getElementById('resetButton').addEventListener('click', () => {
+            gridState.fill('white');
+            document.querySelectorAll('.grid button').forEach(button => {
+                button.style.backgroundColor = 'white';
+            });
+            saveGridState();
+        });
+
+        // Convert the grid to a PNG and download it
+        document.getElementById('downloadButton').addEventListener('click', async () => {
+            // Create an off-screen canvas with the correct dimensions
+            const canvas = document.createElement('canvas');
+            const scale = 1; // Keep at 1 for pixel-perfect output
+            canvas.width = columns * 20 * scale;
+            canvas.height = rows * 20 * scale;
+            const ctx = canvas.getContext('2d');
+            
+            // Disable image smoothing for crisp pixels
+            ctx.imageSmoothingEnabled = false;
+            
+            // Fill background with white first
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw each pixel
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < columns; j++) {
+                    const color = gridState[i * columns + j];
+                    if (color === 'black') {
+                        ctx.fillStyle = 'black';
+                        ctx.fillRect(j * 20 * scale, i * 20 * scale, 20 * scale, 20 * scale);
+                    }
+                }
+            }
+
+            // Create a blob and download it
+            try {
+                const blob = await new Promise((resolve) => {
+                    canvas.toBlob(resolve, 'image/png', 1);
+                });
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'pixel-grid.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+            } catch (error) {
+                console.error('Error generating image:', error);
+                alert('Error generating image. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>

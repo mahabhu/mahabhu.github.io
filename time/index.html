@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dallas Time</title>
+
+  <!-- Ubuntu Mono (VSCode-like) -->
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0f0f0f;
+      color: #e6e6e6;
+      font-family: 'Ubuntu Mono', 'JetBrains Mono', monospace;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    #time {
+      font-size: 3rem;
+      letter-spacing: 0.15em;
+      user-select: none;
+    }
+
+    #copyBtn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      padding: 10px 14px;
+      background: #1e1e1e;
+      color: #e6e6e6;
+      border: 1px solid #444;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    #copyBtn:hover {
+      background: #2a2a2a;
+    }
+
+    #copyBtn:active {
+      background: #3a3a3a;
+    }
+
+    #copyFeedback {
+      position: fixed;
+      bottom: 16px;
+      right: 120px;
+      color: #4CAF50;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="time">--:--:--:--:--:--</div>
+  <button id="copyBtn">Copy</button>
+  <div id="copyFeedback">Copied!</div>
+
+  <script>
+  const timeEl = document.getElementById("time");
+  const copyBtn = document.getElementById("copyBtn");
+  const copyFeedback = document.getElementById("copyFeedback");
+
+  function pad(n) {
+    return n.toString().padStart(2, "0");
+  }
+
+  function updateTime() {
+    const now = new Date();
+
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Chicago",
+      year: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(now);
+
+    const get = type => parts.find(p => p.type === type).value;
+
+    // Trim the values to remove any leading spaces
+    const year = get("year").trim();
+    const month = get("month").trim();
+    const day = get("day").trim();
+    const hour = get("hour").trim();
+    const minute = get("minute").trim();
+    const second = get("second").trim();
+
+    timeEl.textContent =
+      `${year}:${month}:${day}:` +
+      `${hour}:${minute}:${second}`;
+  }
+
+  async function copyText(text) {
+    try {
+      // Modern API (works on https / localhost)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        showFeedback();
+        return;
+      }
+    } catch (err) {
+      console.log('Modern clipboard API failed, trying fallback');
+    }
+
+    // Fallback (works everywhere, including file://)
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-999999px";
+      textarea.style.top = "-999999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      
+      const success = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      
+      if (success) {
+        showFeedback();
+      } else {
+        console.error('Fallback copy failed');
+      }
+    } catch (err) {
+      console.error('Both copy methods failed:', err);
+    }
+  }
+
+  function showFeedback() {
+    copyFeedback.style.opacity = "1";
+    setTimeout(() => {
+      copyFeedback.style.opacity = "0";
+    }, 1500);
+  }
+
+  copyBtn.addEventListener("click", () => {
+    const textToCopy = timeEl.textContent;
+    copyText(textToCopy);
+  });
+
+  updateTime();
+  setInterval(updateTime, 1000);
+</script>
+
+</body>
+</html>

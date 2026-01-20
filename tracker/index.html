@@ -27,6 +27,7 @@
             margin-bottom: 30px;
             border-bottom: 2px solid black;
             padding-bottom: 15px;
+            position: relative;
         }
         
         h1 {
@@ -37,6 +38,27 @@
         .subtitle {
             font-size: 0.9rem;
             opacity: 0.7;
+        }
+        
+        .notification-status {
+            position: absolute;
+            right: 0;
+            top: 10px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ccc;
+        }
+        
+        .status-dot.active {
+            background-color: black;
         }
         
         .current-time {
@@ -115,6 +137,13 @@
             margin-top: 10px;
         }
         
+        .enable-notifications {
+            background-color: black;
+            color: white;
+            margin-top: 15px;
+            width: 100%;
+        }
+        
         .timers-section h2 {
             margin-bottom: 15px;
             font-size: 1.5rem;
@@ -131,6 +160,11 @@
             flex-wrap: wrap;
             align-items: center;
             gap: 15px;
+            position: relative;
+        }
+        
+        .timer-item.expired {
+            background-color: #f0f0f0;
         }
         
         .timer-info {
@@ -175,6 +209,11 @@
             color: white;
         }
         
+        .timer-status.expired {
+            background-color: #333;
+            color: white;
+        }
+        
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -189,9 +228,46 @@
             border-top: 1px solid black;
         }
         
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px;
+            border: 2px solid black;
+            background-color: white;
+            max-width: 300px;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .notification-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .notification-close {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+        }
+        
         @media (max-width: 600px) {
             body {
                 padding: 15px;
+            }
+            
+            .notification-status {
+                position: static;
+                justify-content: center;
+                margin-top: 10px;
             }
             
             .input-group {
@@ -215,13 +291,25 @@
             button {
                 flex: 1;
             }
+            
+            .notification {
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
         }
     </style>
 </head>
 <body>
     <header>
         <h1>MINIMAL TIMER</h1>
-        <!-- <div class="subtitle">TIMERS RESET AT MIDNIGHT</div> -->
+        <div class="subtitle">BACKGROUND NOTIFICATIONS | RESETS AT MIDNIGHT</div>
+        <div class="notification-status">
+            <span>BG:</span>
+            <div class="status-dot" id="service-worker-status"></div>
+            <span>NOTIF:</span>
+            <div class="status-dot" id="notification-status"></div>
+        </div>
     </header>
     
     <div class="current-time">
@@ -235,6 +323,7 @@
             <input type="text" id="timer-duration" placeholder="HHMMSS" maxlength="6" pattern="\d{6}">
         </div>
         <button id="create-timer" class="create-btn">ADD TIMER TO LIST</button>
+        <button id="enable-notifications" class="enable-notifications">ENABLE BACKGROUND NOTIFICATIONS</button>
     </section>
     
     <section class="timers-section">
@@ -244,14 +333,23 @@
         </div>
     </section>
     
+    <div class="notification" id="notification">
+        <button class="notification-close" id="notification-close">×</button>
+        <div class="notification-title" id="notification-title"></div>
+        <div id="notification-body"></div>
+    </div>
+    
     <div class="instructions">
-        <p>All timers reset to original duration at midnight.</p>
+        <p><strong>INSTRUCTIONS:</strong> Enter a timer name and duration in HHMMSS format (e.g., 010000 for 1 hour). Enable notifications to receive alerts when timers expire, even when the browser is in the background. All timers reset to original duration at midnight.</p>
     </div>
 
     <script>
         // Global variables
         let timers = [];
         let lastResetDate = new Date().getDate();
+        let notificationPermission = 'default';
+        let serviceWorkerRegistered = false;
+        let notificationTimeout = null;
         
         // DOM elements
         const currentDateEl = document.getElementById('current-date');
@@ -259,8 +357,15 @@
         const timerNameInput = document.getElementById('timer-name');
         const timerDurationInput = document.getElementById('timer-duration');
         const createTimerBtn = document.getElementById('create-timer');
+        const enableNotificationsBtn = document.getElementById('enable-notifications');
         const timersContainer = document.getElementById('timers-container');
         const emptyState = document.getElementById('empty-state');
+        const notificationEl = document.getElementById('notification');
+        const notificationTitleEl = document.getElementById('notification-title');
+        const notificationBodyEl = document.getElementById('notification-body');
+        const notificationCloseBtn = document.getElementById('notification-close');
+        const serviceWorkerStatusEl = document.getElementById('service-worker-status');
+        const notificationStatusEl = document.getElementById('notification-status');
         
         // Timer class
         class Timer {
@@ -272,6 +377,8 @@
                 this.isRunning = false;
                 this.intervalId = null;
                 this.createdAt = new Date();
+                this.expired = false;
+                this.expiredNotificationSent = false;
             }
             
             // Parse HHMMSS string into seconds
@@ -301,6 +408,12 @@
                 if (this.isRunning || this.remainingTime <= 0) return;
                 
                 this.isRunning = true;
+                this.expired = false;
+                this.expiredNotificationSent = false;
+                
+                // Clear any existing interval
+                if (this.intervalId) clearInterval(this.intervalId);
+                
                 this.intervalId = setInterval(() => {
                     this.remainingTime--;
                     
@@ -309,9 +422,7 @@
                     
                     // If timer reaches zero
                     if (this.remainingTime <= 0) {
-                        this.stop();
-                        this.remainingTime = 0;
-                        this.updateDisplay();
+                        this.handleExpiration();
                     }
                 }, 1000);
                 
@@ -332,7 +443,50 @@
             reset() {
                 this.stop();
                 this.remainingTime = this.originalDuration;
+                this.expired = false;
+                this.expiredNotificationSent = false;
                 this.updateDisplay();
+            }
+            
+            // Handle timer expiration
+            handleExpiration() {
+                this.stop();
+                this.remainingTime = 0;
+                this.expired = true;
+                this.updateDisplay();
+                
+                // Show notification if permission is granted
+                if (notificationPermission === 'granted') {
+                    this.showExpirationNotification();
+                }
+            }
+            
+            // Show notification when timer expires
+            showExpirationNotification() {
+                // Only show notification once per expiration
+                if (this.expiredNotificationSent) return;
+                
+                this.expiredNotificationSent = true;
+                
+                // Show in-page notification
+                showInPageNotification(this.name, "Timer has expired!");
+                
+                // Try to show browser notification if available
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const notification = new Notification("Timer Expired: " + this.name, {
+                        body: "The timer has reached zero.",
+                        icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='white'/><text x='50' y='50' font-family='monospace' font-size='40' text-anchor='middle' dy='.3em'>⏱</text></svg>",
+                        tag: `timer-${this.id}`
+                    });
+                    
+                    // Close notification after 10 seconds
+                    setTimeout(() => {
+                        notification.close();
+                    }, 10000);
+                }
+                
+                // Save to localStorage
+                saveTimersToStorage();
             }
             
             // Update the timer display in the DOM
@@ -344,13 +498,27 @@
                 const displayElement = timerElement.querySelector('.timer-display');
                 if (displayElement) {
                     displayElement.textContent = this.formatTime(this.remainingTime);
+                    
+                    // Add expired styling
+                    if (this.remainingTime <= 0) {
+                        displayElement.style.color = '#777';
+                    } else {
+                        displayElement.style.color = 'black';
+                    }
                 }
                 
                 // Update status
                 const statusElement = timerElement.querySelector('.timer-status');
                 if (statusElement) {
-                    statusElement.textContent = this.isRunning ? 'RUNNING' : 'STOPPED';
-                    statusElement.className = `timer-status ${this.isRunning ? 'running' : ''}`;
+                    if (this.remainingTime <= 0) {
+                        statusElement.textContent = 'EXPIRED';
+                        statusElement.className = 'timer-status expired';
+                        timerElement.classList.add('expired');
+                    } else {
+                        statusElement.textContent = this.isRunning ? 'RUNNING' : 'STOPPED';
+                        statusElement.className = `timer-status ${this.isRunning ? 'running' : ''}`;
+                        timerElement.classList.remove('expired');
+                    }
                 }
                 
                 // Save to localStorage
@@ -360,7 +528,7 @@
             // Create HTML for the timer
             createHTML() {
                 const timerElement = document.createElement('div');
-                timerElement.className = 'timer-item';
+                timerElement.className = `timer-item ${this.remainingTime <= 0 ? 'expired' : ''}`;
                 timerElement.id = `timer-${this.id}`;
                 
                 timerElement.innerHTML = `
@@ -368,7 +536,9 @@
                         <div class="timer-name">${this.name}</div>
                         <div class="timer-display">${this.formatTime(this.remainingTime)}</div>
                         <div class="timer-original">Original: ${this.formatTime(this.originalDuration)}</div>
-                        <div class="timer-status ${this.isRunning ? 'running' : ''}">${this.isRunning ? 'RUNNING' : 'STOPPED'}</div>
+                        <div class="timer-status ${this.remainingTime <= 0 ? 'expired' : (this.isRunning ? 'running' : '')}">
+                            ${this.remainingTime <= 0 ? 'EXPIRED' : (this.isRunning ? 'RUNNING' : 'STOPPED')}
+                        </div>
                     </div>
                     <div class="timer-controls">
                         <button class="start-btn" data-id="${this.id}">START</button>
@@ -383,7 +553,7 @@
         }
         
         // Initialize the application
-        function init() {
+        async function init() {
             // Load timers from localStorage
             loadTimersFromStorage();
             
@@ -394,6 +564,12 @@
             // Check for midnight reset every minute
             setInterval(checkForMidnightReset, 60000);
             
+            // Initialize notification permission
+            await checkNotificationPermission();
+            
+            // Register service worker for background operation
+            await registerServiceWorker();
+            
             // Event listeners
             createTimerBtn.addEventListener('click', createNewTimer);
             timerDurationInput.addEventListener('keypress', function(e) {
@@ -401,6 +577,9 @@
                     createNewTimer();
                 }
             });
+            
+            enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
+            notificationCloseBtn.addEventListener('click', hideNotification);
             
             // Delegate events for timer controls
             timersContainer.addEventListener('click', function(e) {
@@ -423,8 +602,143 @@
                 }
             });
             
+            // Handle page visibility change (for background operation)
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    console.log('Page is now in background');
+                } else {
+                    console.log('Page is now visible');
+                }
+            });
+            
             // Initial render
             renderTimers();
+        }
+        
+        // Register service worker for background operation
+        async function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    // Create a simple service worker inline
+                    const serviceWorkerCode = `
+                        self.addEventListener('install', event => {
+                            self.skipWaiting();
+                            console.log('Timer Service Worker installed');
+                        });
+                        
+                        self.addEventListener('activate', event => {
+                            console.log('Timer Service Worker activated');
+                        });
+                        
+                        self.addEventListener('message', event => {
+                            if (event.data && event.data.type === 'TIMER_EXPIRED') {
+                                // Show notification from service worker
+                                self.registration.showNotification('Timer Expired: ' + event.data.name, {
+                                    body: 'The timer has reached zero.',
+                                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="white"/><text x="50" y="50" font-family="monospace" font-size="40" text-anchor="middle" dy=".3em">⏱</text></svg>',
+                                    tag: 'timer-expired'
+                                });
+                            }
+                        });
+                    `;
+                    
+                    // Create a Blob with the service worker code
+                    const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
+                    const serviceWorkerUrl = URL.createObjectURL(blob);
+                    
+                    // Register the service worker
+                    const registration = await navigator.serviceWorker.register(serviceWorkerUrl);
+                    serviceWorkerRegistered = true;
+                    
+                    console.log('Service Worker registered with scope:', registration.scope);
+                    serviceWorkerStatusEl.classList.add('active');
+                    
+                    // Store the registration globally for messaging
+                    window.serviceWorkerRegistration = registration;
+                    
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                    serviceWorkerStatusEl.style.backgroundColor = '#ff4444';
+                }
+            } else {
+                console.log('Service workers are not supported');
+                serviceWorkerStatusEl.style.backgroundColor = '#ff4444';
+            }
+        }
+        
+        // Check notification permission
+        async function checkNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('This browser does not support notifications');
+                notificationStatusEl.style.backgroundColor = '#ff4444';
+                return;
+            }
+            
+            notificationPermission = Notification.permission;
+            
+            if (notificationPermission === 'granted') {
+                notificationStatusEl.classList.add('active');
+                enableNotificationsBtn.textContent = 'NOTIFICATIONS ENABLED';
+                enableNotificationsBtn.disabled = true;
+                enableNotificationsBtn.style.opacity = '0.7';
+            } else if (notificationPermission === 'denied') {
+                notificationStatusEl.style.backgroundColor = '#ff4444';
+                enableNotificationsBtn.textContent = 'NOTIFICATIONS BLOCKED';
+                enableNotificationsBtn.disabled = true;
+                enableNotificationsBtn.style.opacity = '0.7';
+            } else {
+                notificationStatusEl.style.backgroundColor = '#ffaa00';
+            }
+        }
+        
+        // Request notification permission
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                alert('This browser does not support notifications');
+                return;
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                notificationPermission = permission;
+                
+                if (permission === 'granted') {
+                    notificationStatusEl.classList.add('active');
+                    enableNotificationsBtn.textContent = 'NOTIFICATIONS ENABLED';
+                    enableNotificationsBtn.disabled = true;
+                    enableNotificationsBtn.style.opacity = '0.7';
+                    
+                    // Show confirmation
+                    showInPageNotification('Notifications Enabled', 'You will receive alerts when timers expire.');
+                } else if (permission === 'denied') {
+                    notificationStatusEl.style.backgroundColor = '#ff4444';
+                    enableNotificationsBtn.textContent = 'NOTIFICATIONS BLOCKED';
+                    enableNotificationsBtn.disabled = true;
+                    enableNotificationsBtn.style.opacity = '0.7';
+                    alert('Notifications have been blocked. You can enable them in your browser settings.');
+                }
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+            }
+        }
+        
+        // Show in-page notification
+        function showInPageNotification(title, message) {
+            notificationTitleEl.textContent = title;
+            notificationBodyEl.textContent = message;
+            notificationEl.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            if (notificationTimeout) clearTimeout(notificationTimeout);
+            notificationTimeout = setTimeout(() => {
+                hideNotification();
+            }, 5000);
+        }
+        
+        // Hide notification
+        function hideNotification() {
+            notificationEl.style.display = 'none';
+            if (notificationTimeout) clearTimeout(notificationTimeout);
         }
         
         // Update current date and time display
@@ -446,13 +760,13 @@
             
             // Validate inputs
             if (!name) {
-                alert('Please enter a timer name');
+                showInPageNotification('Input Error', 'Please enter a timer name');
                 timerNameInput.focus();
                 return;
             }
             
             if (!duration || duration.length !== 6 || !/^\d+$/.test(duration)) {
-                alert('Please enter a valid 6-digit duration in HHMMSS format');
+                showInPageNotification('Input Error', 'Please enter a valid 6-digit duration in HHMMSS format');
                 timerDurationInput.focus();
                 return;
             }
@@ -474,13 +788,21 @@
             
             // Save to localStorage
             saveTimersToStorage();
+            
+            // Show confirmation
+            showInPageNotification('Timer Created', `Timer "${name}" added successfully.`);
         }
         
         // Delete a timer
         function deleteTimer(timerId) {
-            timers = timers.filter(timer => timer.id !== timerId);
-            renderTimers();
-            saveTimersToStorage();
+            const timer = timers.find(t => t.id === timerId);
+            if (timer) {
+                timer.stop();
+                timers = timers.filter(timer => timer.id !== timerId);
+                renderTimers();
+                saveTimersToStorage();
+                showInPageNotification('Timer Deleted', `Timer "${timer.name}" has been removed.`);
+            }
         }
         
         // Render all timers
@@ -497,6 +819,15 @@
             
             // Hide empty state
             emptyState.style.display = 'none';
+            
+            // Sort timers: running first, then expired, then stopped
+            timers.sort((a, b) => {
+                if (a.isRunning && !b.isRunning) return -1;
+                if (!a.isRunning && b.isRunning) return 1;
+                if (a.expired && !b.expired) return 1;
+                if (!a.expired && b.expired) return -1;
+                return 0;
+            });
             
             // Render each timer
             timers.forEach(timer => {
@@ -520,7 +851,7 @@
                 renderTimers();
                 
                 // Show notification
-                console.log('Midnight reset: All timers have been reset to original durations.');
+                showInPageNotification('Midnight Reset', 'All timers have been reset to their original durations.');
             }
         }
         
@@ -532,20 +863,30 @@
                 originalDuration: timer.originalDuration,
                 remainingTime: timer.remainingTime,
                 isRunning: timer.isRunning,
-                createdAt: timer.createdAt
+                expired: timer.expired,
+                createdAt: timer.createdAt,
+                expiredNotificationSent: timer.expiredNotificationSent
             }));
             
             localStorage.setItem('minimalTimers', JSON.stringify(timersData));
             localStorage.setItem('lastResetDate', lastResetDate.toString());
+            
+            // Also store notification permission
+            localStorage.setItem('notificationPermission', notificationPermission);
         }
         
         // Load timers from localStorage
         function loadTimersFromStorage() {
             const timersData = localStorage.getItem('minimalTimers');
             const savedLastResetDate = localStorage.getItem('lastResetDate');
+            const savedNotificationPermission = localStorage.getItem('notificationPermission');
             
             if (savedLastResetDate) {
                 lastResetDate = parseInt(savedLastResetDate);
+            }
+            
+            if (savedNotificationPermission) {
+                notificationPermission = savedNotificationPermission;
             }
             
             if (timersData) {
@@ -557,7 +898,9 @@
                         const timer = new Timer(data.id, data.name, '000000');
                         timer.originalDuration = data.originalDuration;
                         timer.remainingTime = data.remainingTime;
-                        timer.isRunning = false; // Always start stopped
+                        timer.isRunning = false; // Always start stopped after reload
+                        timer.expired = data.expired || false;
+                        timer.expiredNotificationSent = data.expiredNotificationSent || false;
                         timer.createdAt = new Date(data.createdAt);
                         
                         timers.push(timer);

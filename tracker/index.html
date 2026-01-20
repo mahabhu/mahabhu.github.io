@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Timer Manager</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Ubuntu Mono', monospace, sans-serif;
+            background-color: white;
+            color: black;
+            line-height: 1.5;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid black;
+            padding-bottom: 15px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .current-time {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid black;
+            background-color: #f5f5f5;
+        }
+        
+        .new-timer-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid black;
+        }
+        
+        .new-timer-section h2 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        input {
+            font-family: 'Ubuntu Mono', monospace, sans-serif;
+            padding: 10px;
+            border: 1px solid black;
+            background-color: white;
+            color: black;
+            font-size: 1rem;
+        }
+        
+        input::placeholder {
+            color: #777;
+        }
+        
+        #timer-name {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        #timer-duration {
+            width: 150px;
+            text-align: center;
+        }
+        
+        button {
+            font-family: 'Ubuntu Mono', monospace, sans-serif;
+            padding: 10px 20px;
+            border: 2px solid black;
+            background-color: white;
+            color: black;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background-color: black;
+            color: white;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .create-btn {
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .timers-section h2 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        #timers-container {
+            border-top: 2px solid black;
+        }
+        
+        .timer-item {
+            padding: 20px;
+            border-bottom: 1px solid black;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .timer-info {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .timer-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 10px 0;
+        }
+        
+        .timer-original {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .timer-status {
+            padding: 5px 10px;
+            border: 1px solid black;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        
+        .timer-status.running {
+            background-color: black;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.5;
+        }
+        
+        .instructions {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 30px;
+            padding: 15px;
+            border-top: 1px solid black;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            #timer-name, #timer-duration {
+                width: 100%;
+            }
+            
+            .timer-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .timer-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>MINIMAL TIMER</h1>
+        <div class="subtitle">TIMERS RESET AT MIDNIGHT</div>
+    </header>
+    
+    <div class="current-time">
+        <span id="current-date"></span> | <span id="current-time"></span>
+    </div>
+    
+    <section class="new-timer-section">
+        <h2>CREATE NEW TIMER</h2>
+        <div class="input-group">
+            <input type="text" id="timer-name" placeholder="Timer Name" maxlength="20">
+            <input type="text" id="timer-duration" placeholder="HHMMSS" maxlength="6" pattern="\d{6}">
+        </div>
+        <button id="create-timer" class="create-btn">ADD TIMER TO LIST</button>
+    </section>
+    
+    <section class="timers-section">
+        <h2>ACTIVE TIMERS</h2>
+        <div id="timers-container">
+            <div class="empty-state" id="empty-state">No timers yet. Create your first timer above.</div>
+        </div>
+    </section>
+    
+    <div class="instructions">
+        <p><strong>INSTRUCTIONS:</strong> Enter a timer name and duration in HHMMSS format (e.g., 010000 for 1 hour). Timers are added in stopped state. Click START to begin, STOP to pause. All timers reset to original duration at midnight.</p>
+    </div>
+
+    <script>
+        // Global variables
+        let timers = [];
+        let lastResetDate = new Date().getDate();
+        
+        // DOM elements
+        const currentDateEl = document.getElementById('current-date');
+        const currentTimeEl = document.getElementById('current-time');
+        const timerNameInput = document.getElementById('timer-name');
+        const timerDurationInput = document.getElementById('timer-duration');
+        const createTimerBtn = document.getElementById('create-timer');
+        const timersContainer = document.getElementById('timers-container');
+        const emptyState = document.getElementById('empty-state');
+        
+        // Timer class
+        class Timer {
+            constructor(id, name, duration) {
+                this.id = id;
+                this.name = name;
+                this.originalDuration = this.parseDuration(duration);
+                this.remainingTime = this.originalDuration;
+                this.isRunning = false;
+                this.intervalId = null;
+                this.createdAt = new Date();
+            }
+            
+            // Parse HHMMSS string into seconds
+            parseDuration(durationStr) {
+                if (durationStr.length !== 6 || !/^\d+$/.test(durationStr)) {
+                    return 3600; // Default to 1 hour if invalid
+                }
+                
+                const hours = parseInt(durationStr.substring(0, 2));
+                const minutes = parseInt(durationStr.substring(2, 4));
+                const seconds = parseInt(durationStr.substring(4, 6));
+                
+                return hours * 3600 + minutes * 60 + seconds;
+            }
+            
+            // Format seconds into HH:MM:SS
+            formatTime(seconds) {
+                const hrs = Math.floor(seconds / 3600);
+                const mins = Math.floor((seconds % 3600) / 60);
+                const secs = seconds % 60;
+                
+                return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            
+            // Start the timer
+            start() {
+                if (this.isRunning || this.remainingTime <= 0) return;
+                
+                this.isRunning = true;
+                this.intervalId = setInterval(() => {
+                    this.remainingTime--;
+                    
+                    // Update the display
+                    this.updateDisplay();
+                    
+                    // If timer reaches zero
+                    if (this.remainingTime <= 0) {
+                        this.stop();
+                        this.remainingTime = 0;
+                        this.updateDisplay();
+                    }
+                }, 1000);
+                
+                this.updateDisplay();
+            }
+            
+            // Stop the timer
+            stop() {
+                this.isRunning = false;
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                this.updateDisplay();
+            }
+            
+            // Reset timer to original duration
+            reset() {
+                this.stop();
+                this.remainingTime = this.originalDuration;
+                this.updateDisplay();
+            }
+            
+            // Update the timer display in the DOM
+            updateDisplay() {
+                const timerElement = document.getElementById(`timer-${this.id}`);
+                if (!timerElement) return;
+                
+                // Update time display
+                const displayElement = timerElement.querySelector('.timer-display');
+                if (displayElement) {
+                    displayElement.textContent = this.formatTime(this.remainingTime);
+                }
+                
+                // Update status
+                const statusElement = timerElement.querySelector('.timer-status');
+                if (statusElement) {
+                    statusElement.textContent = this.isRunning ? 'RUNNING' : 'STOPPED';
+                    statusElement.className = `timer-status ${this.isRunning ? 'running' : ''}`;
+                }
+                
+                // Save to localStorage
+                saveTimersToStorage();
+            }
+            
+            // Create HTML for the timer
+            createHTML() {
+                const timerElement = document.createElement('div');
+                timerElement.className = 'timer-item';
+                timerElement.id = `timer-${this.id}`;
+                
+                timerElement.innerHTML = `
+                    <div class="timer-info">
+                        <div class="timer-name">${this.name}</div>
+                        <div class="timer-display">${this.formatTime(this.remainingTime)}</div>
+                        <div class="timer-original">Original: ${this.formatTime(this.originalDuration)}</div>
+                        <div class="timer-status ${this.isRunning ? 'running' : ''}">${this.isRunning ? 'RUNNING' : 'STOPPED'}</div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="start-btn" data-id="${this.id}">START</button>
+                        <button class="stop-btn" data-id="${this.id}">STOP</button>
+                        <button class="reset-btn" data-id="${this.id}">RESET</button>
+                        <button class="delete-btn" data-id="${this.id}">DELETE</button>
+                    </div>
+                `;
+                
+                return timerElement;
+            }
+        }
+        
+        // Initialize the application
+        function init() {
+            // Load timers from localStorage
+            loadTimersFromStorage();
+            
+            // Update current time every second
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            
+            // Check for midnight reset every minute
+            setInterval(checkForMidnightReset, 60000);
+            
+            // Event listeners
+            createTimerBtn.addEventListener('click', createNewTimer);
+            timerDurationInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    createNewTimer();
+                }
+            });
+            
+            // Delegate events for timer controls
+            timersContainer.addEventListener('click', function(e) {
+                const target = e.target;
+                const timerId = target.getAttribute('data-id');
+                
+                if (!timerId) return;
+                
+                const timer = timers.find(t => t.id == timerId);
+                if (!timer) return;
+                
+                if (target.classList.contains('start-btn')) {
+                    timer.start();
+                } else if (target.classList.contains('stop-btn')) {
+                    timer.stop();
+                } else if (target.classList.contains('reset-btn')) {
+                    timer.reset();
+                } else if (target.classList.contains('delete-btn')) {
+                    deleteTimer(timerId);
+                }
+            });
+            
+            // Initial render
+            renderTimers();
+        }
+        
+        // Update current date and time display
+        function updateCurrentTime() {
+            const now = new Date();
+            currentDateEl.textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            currentTimeEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+        
+        // Create a new timer
+        function createNewTimer() {
+            const name = timerNameInput.value.trim();
+            const duration = timerDurationInput.value.trim();
+            
+            // Validate inputs
+            if (!name) {
+                alert('Please enter a timer name');
+                timerNameInput.focus();
+                return;
+            }
+            
+            if (!duration || duration.length !== 6 || !/^\d+$/.test(duration)) {
+                alert('Please enter a valid 6-digit duration in HHMMSS format');
+                timerDurationInput.focus();
+                return;
+            }
+            
+            // Create timer ID
+            const id = Date.now().toString();
+            
+            // Create new timer
+            const timer = new Timer(id, name, duration);
+            timers.push(timer);
+            
+            // Clear inputs
+            timerNameInput.value = '';
+            timerDurationInput.value = '';
+            timerNameInput.focus();
+            
+            // Render timers
+            renderTimers();
+            
+            // Save to localStorage
+            saveTimersToStorage();
+        }
+        
+        // Delete a timer
+        function deleteTimer(timerId) {
+            timers = timers.filter(timer => timer.id !== timerId);
+            renderTimers();
+            saveTimersToStorage();
+        }
+        
+        // Render all timers
+        function renderTimers() {
+            // Clear container
+            timersContainer.innerHTML = '';
+            
+            // Show empty state if no timers
+            if (timers.length === 0) {
+                timersContainer.appendChild(emptyState);
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            // Hide empty state
+            emptyState.style.display = 'none';
+            
+            // Render each timer
+            timers.forEach(timer => {
+                const timerElement = timer.createHTML();
+                timersContainer.appendChild(timerElement);
+            });
+        }
+        
+        // Check if midnight has passed and reset timers if needed
+        function checkForMidnightReset() {
+            const now = new Date();
+            const currentDate = now.getDate();
+            
+            // If date has changed (midnight passed)
+            if (currentDate !== lastResetDate) {
+                // Reset all timers
+                timers.forEach(timer => timer.reset());
+                lastResetDate = currentDate;
+                
+                // Update display
+                renderTimers();
+                
+                // Show notification
+                console.log('Midnight reset: All timers have been reset to original durations.');
+            }
+        }
+        
+        // Save timers to localStorage
+        function saveTimersToStorage() {
+            const timersData = timers.map(timer => ({
+                id: timer.id,
+                name: timer.name,
+                originalDuration: timer.originalDuration,
+                remainingTime: timer.remainingTime,
+                isRunning: timer.isRunning,
+                createdAt: timer.createdAt
+            }));
+            
+            localStorage.setItem('minimalTimers', JSON.stringify(timersData));
+            localStorage.setItem('lastResetDate', lastResetDate.toString());
+        }
+        
+        // Load timers from localStorage
+        function loadTimersFromStorage() {
+            const timersData = localStorage.getItem('minimalTimers');
+            const savedLastResetDate = localStorage.getItem('lastResetDate');
+            
+            if (savedLastResetDate) {
+                lastResetDate = parseInt(savedLastResetDate);
+            }
+            
+            if (timersData) {
+                try {
+                    const parsedData = JSON.parse(timersData);
+                    
+                    parsedData.forEach(data => {
+                        // Recreate timer from saved data
+                        const timer = new Timer(data.id, data.name, '000000');
+                        timer.originalDuration = data.originalDuration;
+                        timer.remainingTime = data.remainingTime;
+                        timer.isRunning = false; // Always start stopped
+                        timer.createdAt = new Date(data.createdAt);
+                        
+                        timers.push(timer);
+                    });
+                } catch (e) {
+                    console.error('Error loading timers from storage:', e);
+                }
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

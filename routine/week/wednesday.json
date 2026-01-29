@@ -1,0 +1,25 @@
+{
+    "sleep" : {
+        "preperation" : "2300-0000",
+        "bed" : "0000-0700",
+        "fajr" : "0700-0715"
+    },
+    "day" : {
+        "getting ready" : "0715-0800",
+        "work" : {
+            "commuting" : "0800-0830",
+            "meetings" : "0830-1000",
+            "research" : "1000-1300",
+            "lunch" : {
+                "heating" : "1300-1315",
+                "eating" : "1315-1330",
+                "zuhr" : "1330-1345"
+            },
+            "class" : "1345-1500",
+            "study" : "1500-1800",
+            "coming home" : "1800-1900"
+        }
+    },
+    "self time" : "1900-2000",
+    "cooking" : "2000-2300"
+}

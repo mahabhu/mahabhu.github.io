@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Routine Pie</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #111;
+      color: #fff;
+      font-family: "Ubuntu Mono", monospace;
+    }
+    text {
+      fill: white;
+      font-size: 11px;
+      pointer-events: none;
+      font-family: "Ubuntu Mono", monospace;
+    }
+    .hour-marker {
+      stroke: #666;
+      stroke-width: 1;
+    }
+  </style>
+</head>
+<body>
+<svg width="800" height="800"></svg>
+
+<script>
+/* ================= DATA ================= */
+let rawData = {};
+fetch('file.json')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        rawData = data;
+        console.log('JSON data loaded successfully:', rawData);
+        // Call your visualization function here
+        // createVisualization();
+    })
+    .catch(error => {
+        console.error('Error loading file.json:', error);
+        // Fallback to embedded data if file can't be loaded
+        rawData = {
+            "self time": "2300-2100",
+            "cooking": "2100-2300"
+        };
+        console.log('Using fallback data');
+        // createVisualization();
+    }
+  );
+
+// In a real implementation, you would use:
+  d3.json("file.json").then(data => {
+      rawData = data;
+      createVisualization();
+  }).catch(error => {
+      console.error("Error loading file.json:", error);
+      // Use the embedded data as fallback
+      // createVisualization();
+  });
+
+/* ========== HELPERS ========== */
+function toMinutes(t) {
+  return parseInt(t.slice(0,2)) * 60 + parseInt(t.slice(2));
+}
+
+function duration(range) {
+  const [start, end] = range.split("-");
+  let s = toMinutes(start);
+  let e = toMinutes(end);
+  if (e <= s) e += 24 * 60;
+  return (e - s) / 60;
+}
+
+function convert(obj) {
+  return Object.entries(obj).map(([name, value]) => {
+    return typeof value === "string" 
+      ? { name, value: duration(value) }
+      : { name, children: convert(value) };
+  });
+}
+
+/* ================= DAY OF WEEK DETECTION ================= */
+function getDayFileName() {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+  return `week/${days[today]}.json`;
+}
+
+/* ========== FIND START TIME ========== */
+function findStartTime(obj) {
+  const firstKey = Object.keys(obj)[0];
+  const firstValue = obj[firstKey];
+  
+  if (typeof firstValue === "string") {
+    const startHour = parseInt(firstValue.split("-")[0].slice(0,2));
+    const startMinute = parseInt(firstValue.split("-")[0].slice(2));
+    return startHour + startMinute/60;
+  }
+  return findStartTime(firstValue);
+}
+
+function drawHourMarks(){
+  /* ========== HOUR MARKERS ========== */
+  const markerInner = 400 * 0.8;
+  const markerOuter = 400 * 0.9;
+  
+  for (let i = 0; i < 24; i++) {
+    const angle = (i / 24) * 2 * Math.PI;
+    const x1 = Math.cos(angle) * markerInner;
+    const y1 = Math.sin(angle) * markerInner;
+    const x2 = Math.cos(angle) * markerOuter;
+    const y2 = Math.sin(angle) * markerOuter;
+    
+    svg.append("line")
+      .attr("x1", x1)
+      .attr("y1", y1)
+      .attr("x2", x2)
+      .attr("y2", y2)
+      .attr("class", "hour-marker");
+  }
+}
+
+function createChart(data) {
+  const width = 800;
+  const radius = width / 2;
+
+  const svg = d3.select("svg")
+    .attr("viewBox", [0, 0, width, width])
+    .append("g")
+    .attr("transform", `translate(${radius},${radius})`);
+
+  const partition = d3.partition().size([2 * Math.PI, radius]);
+  const root = d3.hierarchy(data).sum(d => d.value || 0.0001);
+  partition(root);
+
+  /* Calculate start time from data */
+  const startHour = findStartTime(rawData) % 24;
+  // const offset = (Math.PI / 2) - (startHour / 24) * 2 * Math.PI;
+  const offset = (startHour / 24) * 2 * Math.PI;
+
+  const arc = d3.arc()
+    .startAngle(d => d.x0 + offset)
+    .endAngle(d => d.x1 + offset)
+    .innerRadius(d => d.y0)
+    .outerRadius(d => d.y1);
+
+  /* Draw arcs */
+  svg.selectAll("path")
+    .data(root.descendants())
+    .join("path")
+    .attr("d", arc)
+    .attr("fill", d => d3.interpolateRainbow(d.x0 / (2 * Math.PI)))
+    .attr("stroke", "#111");
+
+  /* Labels */
+  svg.selectAll("text")
+    .data(root.descendants().filter(d => d.depth))
+    .join("text")
+    .attr("transform", d => {
+      let angle = ((d.x0 + d.x1) / 2 + offset) * 180 / Math.PI;
+      const r = (d.y0 + d.y1) / 2;
+      while(angle>=360) angle-=360.0;
+      while(angle<0) angle+=360.0;
+      return `rotate(${angle - 90}) translate(${r},0) rotate(${(angle>=0 && angle < 180) ? 0 : 180})`;
+    })
+    .attr("dx", "-20")
+    .attr("dy", ".35em")
+    .text(d => d.data.name);
+    
+   /* ========== HOUR MARKERS ========== */
+  const markerInner = 400 * 0.8;
+  const markerOuter = 400 * 0.9;
+  
+  for (let i = 0; i < 24; i++) {
+    const angle = (i / 24) * 2 * Math.PI;
+    const x1 = Math.cos(angle) * markerInner;
+    const y1 = Math.sin(angle) * markerInner;
+    const x2 = Math.cos(angle) * markerOuter;
+    const y2 = Math.sin(angle) * markerOuter;
+    
+    svg.append("line")
+      .attr("x1", x1)
+      .attr("y1", y1)
+      .attr("x2", x2)
+      .attr("y2", y2)
+      .attr("class", "hour-marker");
+      
+    // Add hour labels
+    const labelAngle = ((i-6) / 24) * 2 * Math.PI;
+    const labelRadius = 400 * 0.95;
+    const x = Math.cos(labelAngle) * labelRadius;
+    const y = Math.sin(labelAngle) * labelRadius;
+    
+    svg.append("text")
+      .attr("x", x)
+      .attr("y", y)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .text(i === 0 ? "12 AM" : i === 12 ? "12 PM" : i % 12)
+      .attr("font-size", "10px")
+      .attr("fill", "#aaa");
+  }
+   /* ========== CURRENT TIME ARROW ========== */
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const angle = (minutes / (24 * 60) + 0.75) * 2 * Math.PI;
+
+  const arrowOuter = radius + 25;
+  const arrowInner = radius - 50;
+
+  svg.append("line")
+    .attr("x1", Math.cos(angle) * arrowOuter)
+    .attr("y1", Math.sin(angle) * arrowOuter)
+    .attr("x2", Math.cos(angle) * arrowInner)
+    .attr("y2", Math.sin(angle) * arrowInner)
+    .attr("stroke", "white")
+    .attr("stroke-width", 2);
+
+  svg.append("circle")
+    .attr("cx", Math.cos(angle) * arrowInner)
+    .attr("cy", Math.sin(angle) * arrowInner)
+    .attr("r", 3)
+    .attr("fill", "white");
+    
+  // Add current day display
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const today = days[new Date().getDay()];
+  
+  svg.append("text")
+    .attr("x", -radius + 30)
+    .attr("y", -radius + 30)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "32px")
+    .attr("font-weight", "bold")
+    .attr("fill", "#fff")
+    .text(`${today}`);
+}
+
+/* ========== LOAD DATA ========== */
+// Try to load from file.json first, fall back to embedded data
+fetch(getDayFileName())
+  .then(response => {
+    if (!response.ok) throw new Error('File not found');
+    return response.json();
+  })
+  .then(fileData => {
+    // Use data from file.json
+    const data = {
+      name: "Day",
+      children: convert(fileData)
+    };
+    createChart(data);
+  })
+  .catch(error => {
+    console.log('Using embedded data:', error.message);
+    // Use embedded data as fallback
+    const data = {
+      name: "Day",
+      children: convert(rawData)
+    };
+    createChart(data);
+  });
+</script>
+</body>
+</html>

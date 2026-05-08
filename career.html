@@ -3,168 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Portfolio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400&display=swap" rel="stylesheet">
+    <title>Career &mdash; Mashroor Hasan Bhuiyan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/site.css">
     <style>
-        body {
-            margin: 0;
-            font-family: 'Cascadia Code', monospace;
-            background: #f4f4f4;
-            color: #444;
-            display: flex;
-        }
-        .sidebar {
-            background-color: #333;
-            width: 90px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 10px;
-            z-index: 1000;
-        }
-        .sidebar button {
-            background-color: #fff;
-            border: none;
-            width: 70px;
-            height: 70px;
-            margin: 10px 0;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-family: inherit;
-            font-size: 1.5em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-        }
-        .sidebar button:nth-of-type(2) {
-            background-color: #acacac;
-        }
-        .sidebar button:hover {
-            background-color: #ddd;
-        }
-        main {
-            margin-left: 90px;
-            flex-grow: 1;
-        }
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 100px;
-        }
-        .header-title {
-            font-size: 1.5em;
-            margin: 0;
-        }
-        section {
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .section-title {
-            font-size: 2em;
-            margin-bottom: 10px;
-            text-align: center;
-        }
+        /* ---------- Timeline ---------- */
         .timeline {
             position: relative;
-            margin: 40px 0;
-            padding: 0;
+            margin: 24px 0;
+            padding: 8px 0;
         }
+
         .timeline::before {
             content: "";
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 4px;
-            background-color: #333;
+            width: 3px;
+            background-color: var(--accent);
             left: 50%;
-            transform: translateX(-50%);
+            margin-left: -1.5px;
+            border-radius: 2px;
         }
+
         .timeline-entry {
             position: relative;
-            margin-bottom: 20px;
-            width: 50%; /* Make each entry half the width */
+            width: 50%;
+            margin-bottom: 28px;
         }
+
         .timeline-entry:nth-child(odd) {
-            left: 50%;
-            padding-left: 20px;
+            margin-left: 50%;
+            padding-left: 32px;
         }
+
         .timeline-entry:nth-child(even) {
-            left: 0;
-            padding-right: 20px;
+            padding-right: 32px;
             text-align: right;
         }
+
         .timeline-entry::before {
             content: "";
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 14px;
+            height: 14px;
             background-color: #fff;
-            border: 2px solid #333;
+            border: 3px solid var(--accent);
             border-radius: 50%;
-            top: 5px;
-            transform: translateX(-50%);
+            top: 18px;
         }
-        .timeline-entry:nth-child(odd)::before {
-            left: -5px;
-        }
-        .timeline-entry:nth-child(even)::before {
-            right: -5px;
-        }
+
+        .timeline-entry:nth-child(odd)::before { left: -7px; }
+        .timeline-entry:nth-child(even)::before { right: -7px; }
+
         .timeline-content {
-            background-color: #fff;
-            border-radius: 6px;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-            padding: 10px 20px;
+            background-color: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px 22px;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
         }
+
+        .timeline-content:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
         .timeline-title {
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 600;
+            margin: 0 0 4px;
+            color: var(--ink-strong);
         }
-        /* Mobile view adjustments */
+
+        .timeline-date {
+            font-size: 0.85em;
+            color: var(--muted);
+            margin: 0 0 8px;
+        }
+
+        .timeline-content p:last-child {
+            margin: 0;
+            line-height: 1.55;
+        }
+
         @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-            .sidebar {
-                flex-direction: row;
-                width: 100%;
-                height: 50px;
-                justify-content: space-around;
-                position: fixed;
-                top: 0;
-                left: 0;
-            }
-            .sidebar button {
-                width: 50px;
-                height: 50px;
-            }
-            main {
+            .timeline::before {
+                left: 18px;
                 margin-left: 0;
-                margin-top: 50px; /* To avoid content behind the navbar */
             }
-            header {
-                flex-direction: column;
-                height: auto;
-                padding: 20px;
+
+            .timeline-entry,
+            .timeline-entry:nth-child(odd),
+            .timeline-entry:nth-child(even) {
+                width: 100%;
+                margin-left: 0;
+                padding-left: 44px;
+                padding-right: 0;
+                text-align: left;
             }
-            .header-title {
-                font-size: 1.5em;
-                padding: 40px;
+
+            .timeline-entry:nth-child(odd)::before,
+            .timeline-entry:nth-child(even)::before {
+                left: 11px;
+                right: auto;
             }
         }
     </style>
@@ -172,67 +114,69 @@
 <body>
 
     <div class="sidebar">
-        <button onclick="window.location.href='index.html'"><i class="fas fa-home"></i></button>
-        <button onclick="window.location.href='career.html'"><i class="fas fa-graduation-cap"></i></button>
-        <button onclick="window.location.href='skills.html'"><i class="fas fa-th-large"></i></button>
-        <button onclick="window.location.href='resume.html'"><i class="fas fa-file-alt"></i></button>
-        <button onclick="window.location.href='contact.html'"><i class="fas fa-paperclip"></i></button>
+        <button onclick="window.location.href='index.html'" aria-label="Home"><i class="fas fa-home"></i></button>
+        <button onclick="window.location.href='career.html'" aria-current="page" aria-label="Career"><i class="fas fa-graduation-cap"></i></button>
+        <button onclick="window.location.href='skills.html'" aria-label="Skills"><i class="fas fa-th-large"></i></button>
+        <button onclick="window.location.href='resume.html'" aria-label="Resume"><i class="fas fa-file-alt"></i></button>
+        <button onclick="window.location.href='contact.html'" aria-label="Contact"><i class="fas fa-paperclip"></i></button>
     </div>
 
     <main>
         <header>
-            <h6 class="header-title">Mashroor Hasan Bhuiyan</h6>
+            <h1 class="header-title">Mashroor Hasan Bhuiyan</h1>
         </header>
 
         <section>
-            <div class="section-title">Career</div>
+            <h2 class="section-title">Career</h2>
             <div class="timeline">
                 <div class="timeline-entry">
                     <div class="timeline-content">
-                        <div class="timeline-title">Inverse AI</div>
-                        <p style="font-family: 'Cascadia Code', monospace; font-size: 15px; color: #9e9e9e;">April 2025 - present</p>
+                        <h3 class="timeline-title">Inverse AI</h3>
+                        <p class="timeline-date">April 2025 &mdash; present</p>
                         <p>Machine Learning Engineer</p>
                     </div>
                 </div>
                 <div class="timeline-entry">
                     <div class="timeline-content">
-                        <div class="timeline-title">Bangladesh University of Engineering and Technology</div>
-                        <p style="font-family: 'Cascadia Code', monospace; font-size: 15px; color: #9e9e9e;">February 2020 - March 2025</p>
-                        <p>Bachelor in Science<br>Computer Science and Engineering<br>CGPA: 3.94/4.00</p>
+                        <h3 class="timeline-title">Bangladesh University of Engineering and Technology</h3>
+                        <p class="timeline-date">February 2020 &mdash; March 2025</p>
+                        <p>Bachelor of Science<br>Computer Science and Engineering<br>CGPA: 3.94 / 4.00</p>
                     </div>
                 </div>
                 <div class="timeline-entry">
                     <div class="timeline-content">
-                        <div class="timeline-title">Notre Dame College</div>
-                        <p style="font-family: 'Cascadia Code', monospace; font-size: 15px; color: #9e9e9e;">July 2017 - July 2019</p>
-                        <p>Class 11-12<br>Higher Secondary Certificate<br>GPA: 5.00/5.00</p>
+                        <h3 class="timeline-title">Notre Dame College</h3>
+                        <p class="timeline-date">July 2017 &mdash; July 2019</p>
+                        <p>Class 11&ndash;12<br>Higher Secondary Certificate<br>GPA: 5.00 / 5.00</p>
                     </div>
                 </div>
                 <div class="timeline-entry">
                     <div class="timeline-content">
-                        <div class="timeline-title">Rajuk Uttara Model College</div>
-                        <p style="font-family: 'Cascadia Code', monospace; font-size: 15px; color: #9e9e9e;">April 2013 - May 2017</p>
-                        <p>Class 7-10<br>Junior School Certificate<br>Secondary School Certificate</p>
+                        <h3 class="timeline-title">Rajuk Uttara Model College</h3>
+                        <p class="timeline-date">April 2013 &mdash; May 2017</p>
+                        <p>Class 7&ndash;10<br>Junior School Certificate<br>Secondary School Certificate</p>
                     </div>
                 </div>
                 <div class="timeline-entry">
                     <div class="timeline-content">
-                        <div class="timeline-title">Adamjee Cantonment Public School</div>
-                        <p style="font-family: 'Cascadia Code', monospace; font-size: 15px; color: #9e9e9e;">January 2011 - March 2013</p>
-                        <p>Class 5-6<br>Primary Education Certificate</p>
+                        <h3 class="timeline-title">Adamjee Cantonment Public School</h3>
+                        <p class="timeline-date">January 2011 &mdash; March 2013</p>
+                        <p>Class 5&ndash;6<br>Primary Education Certificate</p>
                     </div>
                 </div>
                 <div class="timeline-entry">
                     <div class="timeline-content">
-                        <div class="timeline-title">Bangladesh International School & College</div>
-                        <p style="font-family: 'Cascadia Code', monospace; font-size: 15px; color: #9e9e9e;">January 2007 - December 2010</p>
-                        <p>Class 1-4</p>
+                        <h3 class="timeline-title">Bangladesh International School &amp; College</h3>
+                        <p class="timeline-date">January 2007 &mdash; December 2010</p>
+                        <p>Class 1&ndash;4</p>
                     </div>
                 </div>
-                <!-- Add as many entries as needed -->
             </div>
         </section>
 
+        <footer>
+            <p>&copy; 2025 Mashroor Hasan Bhuiyan. All Rights Reserved.</p>
+        </footer>
     </main>
 
 </body>

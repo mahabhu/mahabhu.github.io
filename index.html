@@ -3,157 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Portfolio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400&display=swap" rel="stylesheet">
+    <title>Mashroor Hasan Bhuiyan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/site.css">
     <style>
-        body {
-            margin: 0;
-            font-family: 'Cascadia Code', monospace;
-            background: #f4f4f4;
-            color: #444;
-            display: flex;
-        }
-        .sidebar {
-            background-color: #333;
-            width: 90px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 10px;
-            z-index: 1000;
-        }
-        .sidebar button {
-            background-color: #fff;
-            border: none;
-            width: 70px;
-            height: 70px;
-            margin: 10px 0;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            font-family: inherit;
-            font-size: 1.5em;
-            display: flex;
-            align-items: center;
+        /* ---------- Hero (index-only) ---------- */
+        header.hero {
+            padding: 64px 48px;
+            min-height: 360px;
+            gap: 56px;
             justify-content: center;
-            color: #000;
         }
-        .sidebar button:nth-of-type(1) {
-            background-color: #acacac;
+
+        .hero-text {
+            max-width: 460px;
+            flex: 0 1 auto;
         }
-        .sidebar button:hover {
-            background-color: #ddd;
+
+        .hero-title {
+            font-size: 2.4em;
+            margin: 0 0 14px;
+            font-weight: 600;
+            line-height: 1.15;
+            letter-spacing: 0.01em;
         }
-        main {
-            margin-left: 90px;
-            flex-grow: 1;
-        }
-        header {
-            background-color: #333;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: calc(1.2 * 400px);
-        }
-        .header-title {
-            font-size: 2.5em;
+
+        .hero-subtitle {
             margin: 0;
+            font-size: 1.05em;
+            opacity: 0.78;
+            line-height: 1.5;
         }
-        .header-image {
-            max-height: 400px;
-            position: absolute;
-            right: 20px;
+
+        .hero-image {
+            width: 240px;
+            height: 240px;
+            object-fit: cover;
+            border-radius: 50%;
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+            border: 4px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
         }
-        section {
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
+
+        /* ---------- About card ---------- */
+        .about {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 32px 36px;
+            line-height: 1.75;
         }
-        .section-title {
-            font-size: 2em;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        footer {
-            text-align: center;
-            padding: 10px;
-            background: #333;
-            color: white;
-        }
-        /* Mobile view adjustments */
+
+        .about p { margin: 0; }
+        .about p + p { margin-top: 14px; }
+
         @media (max-width: 768px) {
-            body {
+            header.hero {
                 flex-direction: column;
+                padding: 40px 20px;
+                gap: 28px;
+                min-height: 0;
             }
-            .sidebar {
-                flex-direction: row;
-                width: 100%;
-                height: 50px;
-                justify-content: space-around;
-                position: fixed;
-                top: 0;
-                left: 0;
-            }
-            .sidebar button {
-                width: 50px;
-                height: 50px;
-            }
-            main {
-                margin-left: 0;
-                margin-top: 50px;
-            }
-            header {
-                flex-direction: column;
-                height: auto;
-                padding: 50px 0;
-                width: 100%;
-            }
-            .header-image {
-                position: relative;
-                width: 105%; /* Full width for mobile view */
-                max-height: none; /* Remove max-height to allow full width */
-            }
-            .header-title {
-                font-size: 2.5em;
-                padding: 40px;
-            }
+            .hero-image { width: 180px; height: 180px; }
+            .hero-text { text-align: center; }
+            .hero-title { font-size: 1.8em; }
+            .about { padding: 22px 20px; }
         }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <button onclick="window.location.href='index.html'"><i class="fas fa-home"></i></button>
-        <button onclick="window.location.href='career.html'"><i class="fas fa-graduation-cap"></i></button>
-        <button onclick="window.location.href='skills.html'"><i class="fas fa-th-large"></i></button>
-        <button onclick="window.location.href='resume.html'"><i class="fas fa-file-alt"></i></button>
-        <button onclick="window.location.href='contact.html'"><i class="fas fa-paperclip"></i></button>
+        <button onclick="window.location.href='index.html'" aria-current="page" aria-label="Home"><i class="fas fa-home"></i></button>
+        <button onclick="window.location.href='career.html'" aria-label="Career"><i class="fas fa-graduation-cap"></i></button>
+        <button onclick="window.location.href='skills.html'" aria-label="Skills"><i class="fas fa-th-large"></i></button>
+        <button onclick="window.location.href='resume.html'" aria-label="Resume"><i class="fas fa-file-alt"></i></button>
+        <button onclick="window.location.href='contact.html'" aria-label="Contact"><i class="fas fa-paperclip"></i></button>
     </div>
 
     <main>
-        <header>
-            <h1 class="header-title">Mashroor Hasan Bhuiyan</h1>
-            <img src="assets/imgs/profile_photo.jpg" alt="Profile Image" class="header-image">
+        <header class="hero">
+            <div class="hero-text">
+                <h1 class="hero-title">Mashroor Hasan Bhuiyan</h1>
+                <p class="hero-subtitle">Computer Science &middot; Cybersecurity &middot; Systems Programming</p>
+            </div>
+            <img src="assets/imgs/profile_photo.jpg" alt="Profile photo of Mashroor Hasan Bhuiyan" class="hero-image">
         </header>
 
         <section>
-            <div class="section-title">About Me</div>
-            <p>I am a dedicated and inquisitive computer science student with strong interests in cybersecurity, cryptographic protocols, and system-level programming. My recent work involves hands-on exploration of TLS 1.3 implementations using tools like s2n-tls, OpenSSL, and StateLearner, including vulnerability discovery and responsible disclosure to library developers. I’ve also engaged in machine learning coursework, implementing neural networks and working with datasets like Fashion MNIST.<br>
-                Beyond academics, I am actively involved in mentoring junior students, organizing contests, and managing resource constraints creatively in competitive environments. I value clarity, persistence, and continuous learning, and I approach both technical challenges and collaborative projects with focus and integrity.</p>
+            <h2 class="section-title">About Me</h2>
+            <div class="about">
+                <p>I am a dedicated and inquisitive computer science student with strong interests in cybersecurity, cryptographic protocols, and system-level programming. My recent work involves hands-on exploration of TLS 1.3 implementations using tools like s2n-tls, OpenSSL, and StateLearner, including vulnerability discovery and responsible disclosure to library developers. I&rsquo;ve also engaged in machine learning coursework, implementing neural networks and working with datasets like Fashion MNIST.</p>
+                <p>Beyond academics, I am actively involved in mentoring junior students, organizing contests, and managing resource constraints creatively in competitive environments. I value clarity, persistence, and continuous learning, and I approach both technical challenges and collaborative projects with focus and integrity.</p>
+            </div>
         </section>
 
         <footer>
-            <p>&copy; 2025 @ Mashroor Hasan Bhuiyan. All Rights Reserved.</p>
+            <p>&copy; 2025 Mashroor Hasan Bhuiyan. All Rights Reserved.</p>
         </footer>
     </main>
 

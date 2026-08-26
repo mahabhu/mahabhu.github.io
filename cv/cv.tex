@@ -1,0 +1,320 @@
+%----------------------------------------------------------------------------------------
+%	SELF-CONTAINED CV — no external resume.cls required
+%	The class definitions formerly in resume.cls are inlined in the preamble below.
+%----------------------------------------------------------------------------------------
+
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[parfill]{parskip} % Remove paragraph indentation
+\usepackage{array}            % Required for boldface (\bf and \bfseries) tabular columns
+\usepackage{ifthen}           % Required for ifthenelse statements
+
+\usepackage[left=0.4in,top=0.3in,right=0.4in,bottom=0.3in]{geometry} % Document margins
+\usepackage{hyperref}
+
+\pagestyle{empty} % Suppress page numbers
+
+% Never split an entry across a page: no orphaned first line, no widowed last line
+\clubpenalty=10000
+\widowpenalty=10000
+
+\makeatletter
+
+%----------------------------------------------------------------------------------------
+%	SPACING
+%----------------------------------------------------------------------------------------
+
+\def\namesize{\huge}          % Size of the name at the top of the document
+\def\addressskip{\smallskip}  % The space between the two address (or phone/email) lines
+\def\sectionlineskip{\medskip}% The space above the horizontal line for each section
+\def\nameskip{\bigskip}       % The space after your name at the top
+\def\sectionskip{\medskip}    % The space after the heading section
+
+% Every right-aligned date field goes through this, so their style is set in one place
+\newcommand{\dates}[1]{\textit{#1}}
+
+%----------------------------------------------------------------------------------------
+%	HEADING COMMANDS: name and address
+%----------------------------------------------------------------------------------------
+
+\def\addressSep{$\diamond$} % Separator between fields on one address line
+
+\def\name#1{\def\@name{#1}}
+\def\@name{}
+
+% Up to three address lines, printed in the order they are declared
+\let\@addressone\relax
+\let\@addresstwo\relax
+\let\@addressthree\relax
+
+\def\address#1{%
+  \@ifundefined{@addressone}{\def\@addressone{#1}}{%
+  \@ifundefined{@addresstwo}{\def\@addresstwo{#1}}{%
+                             \def\@addressthree{#1}}}%
+}
+
+% Style one address line; \\ inside it becomes the field separator
+\def\printaddress#1{%
+  \begingroup
+    \def \\ {\addressSep\ }
+    \centerline{#1}%
+  \endgroup
+  \par
+  \addressskip
+}
+
+\def\printname{%
+  \begingroup
+    \hfil{\MakeUppercase{\namesize\bf \@name}}\hfil
+    \nameskip\break
+  \endgroup
+}
+
+% Prints the name followed by every address line that was declared
+\newcommand{\makeheader}{%
+  \printname
+  \@ifundefined{@addressone}{}{\printaddress{\@addressone}}%
+  \@ifundefined{@addresstwo}{}{\printaddress{\@addresstwo}}%
+  \@ifundefined{@addressthree}{}{\printaddress{\@addressthree}}%
+}
+
+\makeatother
+
+%----------------------------------------------------------------------------------------
+%	SECTION FORMATTING
+%----------------------------------------------------------------------------------------
+
+% One argument - the section name.
+% The \nobreak/\@beginparpenalty chain below keeps the title, the rule and the
+% first entry on the same page - without it a section heading can be left
+% stranded at the foot of a page while its content starts on the next one.
+\makeatletter
+\newenvironment{rSection}[1]{%
+  \sectionskip
+  \MakeUppercase{\bf #1} % Section title
+  \par\nobreak            % end the title line; forbid a break before the rule
+  \sectionlineskip
+  \nobreak
+  \hrule % Horizontal line
+  \nobreak
+  \@beginparpenalty\@M    % forbid a break between the rule and the first entry
+  \begin{list}{}{%
+    \setlength{\leftmargin}{1.5em} % Margin within the section
+  }
+  \item[]
+}{%
+  \end{list}
+}
+\makeatother
+
+%----------------------------------------------------------------------------------------
+%	POSITION / EXPERIENCE FORMATTING
+%----------------------------------------------------------------------------------------
+
+% Four arguments - organization, location, title, dates.
+% The whole subsection is a single paragraph and \item is just a line break, so
+% every line sits exactly one \baselineskip below the previous one. A nested list
+% would insert \topsep/\parsep/\itemsep glue and break that rhythm.
+\newenvironment{rSubsection}[4]{%
+ \def\item{\\}% Each \item line is a plain new line, no bullet, no extra leading
+ {\bf #1} \hfill {#2}% Bold organization, location on the right
+ \ifthenelse{\equal{#3}{}}{}{ % Skip the title line if the third argument is empty
+  \\
+  {\em #3} \hfill \dates{#4}% Italic title, italic dates on the right
+  }%
+}{%
+}
+
+%----------------------------------------------------------------------------------------
+%	PERSONAL DETAILS
+%----------------------------------------------------------------------------------------
+
+\name{Mashroor Hasan Bhuiyan}
+\address{\textbf{PhD Student, Department of Computer Science, The University of Texas at Dallas}}
+\address{7825 McCallum Blvd, Apt 811, Dallas, TX 75252, USA}
+\address{+1 945 367 4927 \\ mashroorhasan.bhuiyan@utdallas.edu}
+
+\begin{document}
+
+\makeheader
+
+%----------------------------------------------------------------------------------------
+%	EDUCATION
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Education}
+\itemsep -3pt
+
+{\bf PhD in Computer Science} 
+\hfill \dates{August 2025 -- July 2030} \\
+The University of Texas at Dallas, Richardson, TX, USA\\ 
+CGPA: 3.75/4.00
+
+% {\bf Machine Learning Engineer} 
+% \hfill \dates{February 2020 -- March 2025} \\
+% Inverse AI, Dhaka, Bangladesh\\
+
+{\bf BSc in Computer Science and Engineering} 
+\hfill \dates{February 2020 -- March 2025} \\
+Bangladesh University of Engineering and Technology, Dhaka, Bangladesh\\
+CGPA: 3.94/4.00
+
+% {\bf HSC in Science} 
+% \hfill \dates{July 2017 -- June 2019} \\
+% Notre Dame College, Dhaka, Bangladesh\\
+% CGPA: 5.00/5.00
+
+% {\bf SSC in Science} 
+% \hfill \dates{April 2013 -- May 2017} \\
+% Rajuk Uttara Model College, Dhaka, Bangladesh\\
+% CGPA: 5.00/5.00
+
+% {\bf School} 
+% \hfill \dates{January 2011 -- March 2013} \\
+% Adamjee Cantonment Public School, Dhaka, Bangladesh\\
+% CGPA: 5.00/5.00
+
+% {\bf School} 
+% \hfill \dates{January 2007 -- December 2010} \\
+% Bangladesh International School, Dhaka, Bangladesh\\
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	RESEARCH INTERESTS
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Research Interests}
+\itemsep -3pt
+
+Security and Privacy of Cellular and NextG Systems (LTE/5G, O-RAN, Voice over Wi-Fi) | Protocol Security Testing and Specification Analysis | ML-Based Network Intrusion Detection and Explainable Mitigation | LLM-Powered Cloud Security Analytics
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	RESEARCH POSITIONS
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Research Positions}
+
+\begin{rSubsection}{The University of Texas at Dallas}{Richardson, TX, USA}
+{Graduate Research Assistant}{August 2025 -- August 2026}
+\item Department of Computer Science, Erik Jonsson School of Engineering
+\item Advisor: Dr. Imtiaz Karim
+\end{rSubsection}
+
+\begin{rSubsection}{Inverse AI}{Dhaka, Bangladesh}
+{Machine Learning Engineer}{April 2025 -- July 2025}
+\item Research \& Development
+\end{rSubsection}
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	RESEARCH PUBLICATIONS
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Research Publications}
+\itemsep -3pt
+
+{Imtiaz Karim, Hyunwoo Lee, Hassan Asghar, Kazi Samin Mubasshir, Seulgi Han, \underline{Mashroor Hasan Bhuiyan}, and Elisa Bertino, ``\textit{VWAttacker: A Systematic Security Testing Framework for Voice over WiFi User Equipments}'' \\
+The 45th IEEE International Conference on Computer Communications (\textbf{INFOCOM}), 2026}
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	MANUSCRIPTS UNDER REVIEW
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Manuscripts Under Review}
+\itemsep -3pt
+
+{\underline{Mashroor Hasan Bhuiyan}, Indranil Biswas, Fatema Tuj Johora, and Imtiaz Karim, ``\textit{5GAgent: Agentic Security Testing of 5G Baseband Control-Plane Implementations}'' \\
+The 34th Network and Distributed System Security Symposium (\textbf{NDSS}), 2027}
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	PROJECTS
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Projects}
+\itemsep -3pt
+
+{\textbf{GSMA Open Telco AI}, Open Data Contributor \hfill \dates{September 2025 -- March 2026} \\
+Training, benchmarking and fine-tuning of telecom-domain language models. Launched at MWC Barcelona 2026. \\
+\href{https://huggingface.co/GSMA}{\texttt{huggingface.co/GSMA}}}
+
+{\textbf{Network-Side Fake Base Station Detection} \hfill \dates{October 2025 -- July 2026} \\
+Design, implementation and evaluation of FBS detection in real-world vendor networks. In collaboration with Purdue University and Polaris Inc.}
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	FELLOWSHIPS AND AWARDS
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Fellowships and Awards}
+\itemsep -3pt
+
+{\textbf{CyberPowder Fellow} \hfill \dates{January 2026 -- May 2026} \\
+NSF CyberTraining Program (Award \#2417934), University of Utah POWDER Platform. Project: \textit{Deploying Autonomous Security Testing of 5G UE Implementations on POWDER}}
+
+{\textbf{Dean's List} \hfill \dates{November 2021 -- November 2023} \\
+Bangladesh University of Engineering and Technology (BUET). Awarded in all four years of undergraduate study}
+
+{\textbf{University Technical Scholarship} \hfill \dates{February 2020 -- March 2025} \\
+Bangladesh University of Engineering and Technology (BUET). Merit-based, awarded for academic performance}
+
+{\textbf{ICPC Asia West Continent Finals} \hfill \dates{March 2025} \\
+Contestant representing Bangladesh University of Engineering and Technology (BUET). Qualified via ICPC Dhaka Regional}
+
+{\textbf{Bangladesh National Team} \hfill \dates{July 2019} \\
+60th International Mathematical Olympiad, Bath, United Kingdom}
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	WORKSHOPS AND TRAINING
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Workshops and Training}
+\itemsep -3pt
+
+{\textbf{Open6G+AI School} \hfill \dates{April 2026} \\
+Institute for Intelligent Networked Systems, Northeastern University}
+
+{\textbf{First OAI Foundation U.S. Hands-on Workshop} \hfill \dates{November 2025} \\
+OpenAirInterface Foundation, The University of Texas at Austin}
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	ACADEMIC SERVICES
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Academic Services}
+\itemsep -3pt
+\begin{itemize}
+\item Reviewer: IEEE Transactions on Networking, 2025 [External]
+\item Reviewer: IEEE Transactions on Dependable and Secure Computing (TDSC), 2026 [External]
+\end{itemize}
+
+\end{rSection}
+
+%----------------------------------------------------------------------------------------
+%	SKILLS
+%----------------------------------------------------------------------------------------
+
+\begin{rSection}{Skills}
+\itemsep -3pt
+\begin{itemize}
+\item Programming: Python, C/C++, Java and SQL
+\item Machine Learning \& Explainability: Deep Learning, Unsupervised Classification, Anomaly Detection, Feature Engineering, Model Quantization, Feature Attribution and Explanation-Guided Decision Support
+\item Large Language Model Systems: Retrieval-Augmented Generation, Instruction Tuning, Parameter-Efficient Fine-Tuning (LoRA), LLM Agents, Tool Use, Multimodal LLMs and LLM Evaluation
+\item Cellular \& Network Security: LTE/5G Protocol Analysis, Voice over Wi-Fi Security, O-RAN Security, 3GPP Specification Analysis, Stateful Network-Trace Analysis, Threat Modeling and Security Testing
+\end{itemize}
+
+\end{rSection}
+
+\end{document}

@@ -20,6 +20,14 @@ which becomes a timeline tile ordered:
     line 2 of tile : duration
     rest           : degree (1st .tex line), then every remaining .tex line
 
+A line in the block that is just "lat,lon" (commented or not) is treated as the
+place's location rather than body text: it is kept out of the tile and makes the
+whole card a link to Google Maps with a pin dropped on that point. If an
+Education entry has no such line, the place is looked up by name among the
+\\begin{rSubsection}{name}{...} blocks elsewhere in the CV, so a location
+recorded once (say under Research Positions) serves both. An entry with no
+coordinates anywhere simply renders as a non-clickable card.
+
 Usage:  python3 sync.py            # rewrite career.html in place
         python3 sync.py --check    # exit 1 if career.html is out of date
         python3 sync.py --print    # dump the generated block, touch nothing
@@ -45,6 +53,11 @@ INDENT = " " * 16  # entries sit inside <main><section><div class="timeline">
 # The existing tiles render every body line in plain weight, so the {\bf ...}
 # on the degree line is dropped. Flip to True to carry the bold over.
 BOLD_DEGREE = False
+
+# A bare "lat,lon" line inside an entry is the place's location, not body text.
+# It is pulled out of the tile and turned into a Google Maps link on the card.
+COORD_RE = re.compile(r"^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$")
+MAPS_URL = "https://www.google.com/maps?ll=%s,%s&q=%s,%s&hl=en&t=m&z=15"
 
 
 # --------------------------------------------------------------------------
@@ -149,13 +162,23 @@ def entry_blocks(body: str) -> list[list[str]]:
 
 
 class Entry:
-    def __init__(self, institution: str, dates: str, lines: list[str]):
+    def __init__(self, institution: str, dates: str, lines: list[str],
+                 coords: tuple[str, str] | None = None):
         self.institution = institution
         self.dates = dates
         self.lines = lines
+        self.coords = coords          # (lat, lon) as written, or None
+
+    @property
+    def map_url(self) -> str | None:
+        if not self.coords:
+            return None
+        lat, lon = self.coords
+        return MAPS_URL % (lat, lon, lat, lon)
 
     def __repr__(self) -> str:  # debugging aid
-        return "Entry(%r, %r, %r)" % (self.institution, self.dates, self.lines)
+        return "Entry(%r, %r, %r, %r)" % (self.institution, self.dates,
+                                          self.lines, self.coords)
 
 
 def clean(line: str) -> str:
@@ -164,7 +187,36 @@ def clean(line: str) -> str:
     return line.strip()
 
 
+def norm(name: str) -> str:
+    """Key for matching a place across sections: case- and space-insensitive."""
+    return re.sub(r"\s+", " ", name).strip().lower()
+
+
+def subsection_coords(tex: str) -> dict[str, tuple[str, str]]:
+    """Map place name -> coordinates for every \\begin{rSubsection}{name}{...}
+    block in the file that carries a "lat,lon" line.
+
+    Education entries are the primary source, but a place may only have its
+    coordinates recorded elsewhere -- Inverse AI, for instance, is listed under
+    Research Positions. This is the fallback those entries use.
+    """
+    found: dict[str, tuple[str, str]] = {}
+    pat = re.compile(r"\\begin\{rSubsection\}\{(.*?)\}\{.*?\}(.*?)\\end\{rSubsection\}",
+                     re.DOTALL)
+    for m in pat.finditer(tex):
+        name, body = m.group(1), m.group(2)
+        for raw in body.splitlines():
+            hit = COORD_RE.match(uncomment(raw))
+            if hit:
+                lat, lon = hit.group(1), hit.group(2)
+                if -90 <= float(lat) <= 90 and -180 <= float(lon) <= 180:
+                    found.setdefault(norm(latex_to_html(name)), (lat, lon))
+                break
+    return found
+
+
 def parse_education(tex: str) -> list[Entry]:
+    elsewhere = subsection_coords(tex)
     entries: list[Entry] = []
     for block in entry_blocks(section_body(tex, "Education")):
         block = [clean(l) for l in block]
@@ -183,10 +235,34 @@ def parse_education(tex: str) -> list[Entry]:
         # Degree line(s) above the dates, then everything below the institution.
         rest = block[:idx] + block[idx + 2:]
 
+        # A bare "lat,lon" line is location data, so lift it out of the body.
+        coords = None
+        body: list[str] = []
+        for line in rest:
+            m = COORD_RE.match(line)
+            if m and coords is None:
+                lat, lon = m.group(1), m.group(2)
+                if not (-90 <= float(lat) <= 90 and -180 <= float(lon) <= 180):
+                    print("sync.py: %s has out-of-range coordinates %s,%s"
+                          % (institution, lat, lon), file=sys.stderr)
+                else:
+                    coords = (lat, lon)
+                continue
+            body.append(line)
+
+        # Not stated in Education? Look for the place elsewhere in the CV.
+        if coords is None:
+            coords = elsewhere.get(norm(institution))
+
+        if coords is None:
+            print("sync.py: no coordinates for %s; its card will not link"
+                  % institution, file=sys.stderr)
+
         entries.append(Entry(
             latex_to_html(institution),
             latex_to_html(dates).replace("&ndash;", "&mdash;"),
-            [latex_to_html(l) for l in rest],
+            [latex_to_html(l) for l in body],
+            coords,
         ))
     return entries
 
@@ -200,17 +276,41 @@ def strip_bold(s: str) -> str:
 
 
 def render(entries: list[Entry]) -> str:
+    """Emit the entries as two independent columns.
+
+    Each column is its own flow, so cards on the same side of the stem stack
+    flush instead of reserving a row for the card opposite them. Entries
+    alternate between the columns, and the FIRST column is the one drawn on the
+    right (career.html lays the pair out with flex-direction: row-reverse), so
+    the newest entry stays first in the source.
+
+    Each entry also carries its chronological position as --i, which the mobile
+    breakpoint uses to re-interleave the two columns back into one ordered run.
+    """
+    columns: list[list[tuple[int, Entry]]] = [[], []]
+    for idx, e in enumerate(entries):
+        columns[idx % 2].append((idx + 1, e))
+
     out: list[str] = []
-    for e in entries:
-        out.append('%s<div class="timeline-entry">' % INDENT)
-        out.append('%s    <div class="timeline-content">' % INDENT)
-        out.append('%s        <h3 class="timeline-title">%s</h3>' % (INDENT, e.institution))
-        out.append('%s        <p class="timeline-date">%s</p>' % (INDENT, e.dates))
-        lines = e.lines if BOLD_DEGREE else [strip_bold(l) for l in e.lines]
-        if lines:
-            body = ("<br>\n%s" % (INDENT + " " * 11)).join(lines)
-            out.append('%s        <p>%s</p>' % (INDENT, body))
-        out.append('%s    </div>' % INDENT)
+    for column in columns:
+        out.append('%s<div class="timeline-col">' % INDENT)
+        for order, e in column:
+            out.append('%s    <div class="timeline-entry" style="--i: %d">' % (INDENT, order))
+            url = e.map_url
+            if url:
+                out.append('%s        <a class="timeline-content" href="%s" '
+                           'target="_blank" rel="noopener">'
+                           % (INDENT, url.replace("&", "&amp;")))
+            else:
+                out.append('%s        <div class="timeline-content">' % INDENT)
+            out.append('%s            <h3 class="timeline-title">%s</h3>' % (INDENT, e.institution))
+            out.append('%s            <p class="timeline-date">%s</p>' % (INDENT, e.dates))
+            lines = e.lines if BOLD_DEGREE else [strip_bold(l) for l in e.lines]
+            if lines:
+                body = ("<br>\n%s" % (INDENT + " " * 15)).join(lines)
+                out.append('%s            <p>%s</p>' % (INDENT, body))
+            out.append('%s        </%s>' % (INDENT, "a" if url else "div"))
+            out.append('%s    </div>' % INDENT)
         out.append('%s</div>' % INDENT)
     return "\n".join(out)
 

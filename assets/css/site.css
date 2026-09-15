@@ -130,18 +130,6 @@ section {
     color: var(--ink-strong);
 }
 
-/* ---------- Footer ---------- */
-footer {
-    margin-top: auto;
-    text-align: center;
-    padding: 18px;
-    background-color: var(--accent);
-    color: var(--on-accent);
-    font-size: 0.9em;
-}
-
-footer p { margin: 0; }
-
 /* ---------- Mobile ---------- */
 @media (max-width: 768px) {
     body { flex-direction: column; }

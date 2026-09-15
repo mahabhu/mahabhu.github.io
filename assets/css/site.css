@@ -1,28 +1,13 @@
-/* ---------- Palette ----------
-   The ten vars below are rewritten every hour by assets/js/palette.js, which
-   picks a column of assets/csv/color_wheel_hex.csv (01:00 -> col1, 14:00 ->
-   col14, 00:00 -> col24). Ring 2 of that column is the light end, ring 9 the
-   dark end. Values here are the 01:00 column, used before the script runs and
-   as the no-JS fallback. Edit gen_palette.py, not these. */
 :root {
-    --tint: #B8DAE6;       /* ring 2, verbatim -- the old white */
-    --vivid: #1493D2;      /* ring 9, verbatim -- for accents, never for text */
-    --bg: #B8DAE6;
-    --surface: #EEF9FD;
-    --border: #ABC9D4;
-    --shade: #055379;      /* ring 9 re-lit for legibility -- the old black */
-    --ink: #06608B;
-    --muted: #107EB4;
-    --hover: #CDE4ED;
-    --active: #5587A7;
-
-    /* Semantic aliases: the page-level styles speak in these. */
-    --ink-strong: var(--shade);
-    --accent: var(--shade);
-    --accent-soft: var(--active);
-    --accent-active: var(--active);
-    --on-accent: var(--tint);   /* text sitting on an --accent bar */
-
+    --bg: #f4f4f4;
+    --surface: #fff;
+    --ink: #444;
+    --ink-strong: #222;
+    --accent: #333;
+    --accent-soft: #555;
+    --accent-active: #acacac;
+    --muted: #9e9e9e;
+    --border: #e9e9e9;
     --shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
     --shadow-hover: 0 10px 24px rgba(0, 0, 0, 0.10);
     --radius: 8px;
@@ -41,7 +26,6 @@ body {
     color: var(--ink);
     display: flex;
     min-height: 100vh;
-    transition: background-color 0.6s ease, color 0.6s ease;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
 }
@@ -49,7 +33,6 @@ body {
 /* ---------- Sidebar ---------- */
 .sidebar {
     background-color: var(--accent);
-    transition: background-color 0.6s ease;
     width: var(--sidebar-w);
     height: 100vh;
     position: fixed;
@@ -64,7 +47,7 @@ body {
 }
 
 .sidebar button {
-    background-color: var(--surface);
+    background-color: #fff;
     border: none;
     width: 62px;
     height: 62px;
@@ -72,7 +55,7 @@ body {
     cursor: pointer;
     font-family: inherit;
     font-size: 1.4em;
-    color: var(--shade);
+    color: #222;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -80,12 +63,12 @@ body {
 }
 
 .sidebar button:hover {
-    background-color: var(--hover);
+    background-color: #ddd;
 }
 
 .sidebar button[aria-current="page"] {
     background-color: var(--accent-active);
-    color: var(--on-accent);
+    color: #fff;
 }
 
 /* ---------- Layout ---------- */
@@ -100,7 +83,7 @@ main {
 /* ---------- Header (default slim band) ---------- */
 header {
     background-color: var(--accent);
-    color: var(--on-accent);
+    color: #fff;
     padding: 24px 32px;
     display: flex;
     align-items: center;
@@ -137,7 +120,7 @@ footer {
     text-align: center;
     padding: 18px;
     background-color: var(--accent);
-    color: var(--on-accent);
+    color: #fff;
     font-size: 0.9em;
 }
 

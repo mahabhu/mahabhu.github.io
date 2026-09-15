@@ -276,41 +276,30 @@ def strip_bold(s: str) -> str:
 
 
 def render(entries: list[Entry]) -> str:
-    """Emit the entries as two independent columns.
+    """Emit the entries as one chronological run of cards.
 
-    Each column is its own flow, so cards on the same side of the stem stack
-    flush instead of reserving a row for the card opposite them. Entries
-    alternate between the columns, and the FIRST column is the one drawn on the
-    right (career.html lays the pair out with flex-direction: row-reverse), so
-    the newest entry stays first in the source.
-
-    Each entry also carries its chronological position as --i, which the mobile
-    breakpoint uses to re-interleave the two columns back into one ordered run.
+    Order is the whole point of a timeline, so the markup stays a single flat
+    list in .tex order and the alternating left/right layout is done in CSS.
+    assets/js/timeline.js then packs the cards vertically without reordering
+    them; with JS off the list still renders correctly, just more loosely.
     """
-    columns: list[list[tuple[int, Entry]]] = [[], []]
-    for idx, e in enumerate(entries):
-        columns[idx % 2].append((idx + 1, e))
-
     out: list[str] = []
-    for column in columns:
-        out.append('%s<div class="timeline-col">' % INDENT)
-        for order, e in column:
-            out.append('%s    <div class="timeline-entry" style="--i: %d">' % (INDENT, order))
-            url = e.map_url
-            if url:
-                out.append('%s        <a class="timeline-content" href="%s" '
-                           'target="_blank" rel="noopener">'
-                           % (INDENT, url.replace("&", "&amp;")))
-            else:
-                out.append('%s        <div class="timeline-content">' % INDENT)
-            out.append('%s            <h3 class="timeline-title">%s</h3>' % (INDENT, e.institution))
-            out.append('%s            <p class="timeline-date">%s</p>' % (INDENT, e.dates))
-            lines = e.lines if BOLD_DEGREE else [strip_bold(l) for l in e.lines]
-            if lines:
-                body = ("<br>\n%s" % (INDENT + " " * 15)).join(lines)
-                out.append('%s            <p>%s</p>' % (INDENT, body))
-            out.append('%s        </%s>' % (INDENT, "a" if url else "div"))
-            out.append('%s    </div>' % INDENT)
+    for e in entries:
+        out.append('%s<div class="timeline-entry">' % INDENT)
+        url = e.map_url
+        if url:
+            out.append('%s    <a class="timeline-content" href="%s" '
+                       'target="_blank" rel="noopener">'
+                       % (INDENT, url.replace("&", "&amp;")))
+        else:
+            out.append('%s    <div class="timeline-content">' % INDENT)
+        out.append('%s        <h3 class="timeline-title">%s</h3>' % (INDENT, e.institution))
+        out.append('%s        <p class="timeline-date">%s</p>' % (INDENT, e.dates))
+        lines = e.lines if BOLD_DEGREE else [strip_bold(l) for l in e.lines]
+        if lines:
+            body = ("<br>\n%s" % (INDENT + " " * 11)).join(lines)
+            out.append('%s        <p>%s</p>' % (INDENT, body))
+        out.append('%s    </%s>' % (INDENT, "a" if url else "div"))
         out.append('%s</div>' % INDENT)
     return "\n".join(out)
 

@@ -11,22 +11,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="assets/css/site.css">
     <script src="assets/js/palette.js"></script>
+    <script src="assets/js/timeline.js" defer></script>
     <style>
         /* ---------- Timeline ---------- */
         .timeline {
             position: relative;
             margin: 24px 0;
             padding: 8px 0;
-            /* Two independent columns, so cards on one side of the stem stack
-               flush instead of leaving a hole the size of the card opposite.
-               row-reverse puts the FIRST column (newest entry) on the right. */
-            display: flex;
-            flex-direction: row-reverse;
-            align-items: flex-start;
-        }
-
-        .timeline-col {
-            width: 50%;
         }
 
         .timeline::before {
@@ -41,18 +32,41 @@
             border-radius: 2px;
         }
 
+        /* Default (and no-JS) layout: one card per row, alternating sides.
+           Order is always correct; the rows just leave gaps opposite each card.
+           assets/js/timeline.js closes those gaps without reordering anything. */
         .timeline-entry {
             position: relative;
+            width: 50%;
+            margin-bottom: 1.55em;
         }
 
-        /* :first-child is the right-hand column, :last-child the left one. */
-        .timeline-col:first-child .timeline-entry {
+        .timeline-entry:nth-child(odd) {
+            margin-left: 50%;
             padding-left: 32px;
         }
 
-        .timeline-col:last-child .timeline-entry {
+        .timeline-entry:nth-child(even) {
             padding-right: 32px;
             text-align: right;
+        }
+
+        /* Packed layout, switched on by timeline.js once it has measured the
+           cards. Each card is lifted as high as it can go while staying below
+           the previous card's node, so the stem order never changes. */
+        .timeline.is-packed .timeline-entry {
+            position: absolute;
+            top: 0;
+            margin-bottom: 0;
+        }
+
+        .timeline.is-packed .timeline-entry:nth-child(odd) {
+            left: 50%;
+            margin-left: 0;
+        }
+
+        .timeline.is-packed .timeline-entry:nth-child(even) {
+            left: 0;
         }
 
         .timeline-entry::before {
@@ -66,8 +80,8 @@
             top: 18px;
         }
 
-        .timeline-col:first-child .timeline-entry::before { left: -7px; }
-        .timeline-col:last-child .timeline-entry::before { right: -7px; }
+        .timeline-entry:nth-child(odd)::before { left: -7px; }
+        .timeline-entry:nth-child(even)::before { right: -7px; }
 
         /* Horizontal stub joining each node to its card. Runs from the edge of
            the node to the edge of the card, i.e. across the 32px padding. */
@@ -80,8 +94,8 @@
             background-color: var(--accent);
         }
 
-        .timeline-col:first-child .timeline-entry::after { left: 7px; }
-        .timeline-col:last-child .timeline-entry::after { right: 7px; }
+        .timeline-entry:nth-child(odd)::after { left: 7px; }
+        .timeline-entry:nth-child(even)::after { right: 7px; }
 
         /* Cards with coordinates in cv.tex render as <a>; the rest stay <div>.
            Both must look identical, so strip the link's default styling. */
@@ -128,35 +142,25 @@
                 margin-left: 0;
             }
 
-            /* One column on phones. The wrappers drop out of the box tree so
-               every entry becomes a flex item of .timeline, and --i (written by
-               sync.py) re-interleaves them into chronological order. */
-            .timeline {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .timeline-col {
-                display: contents;
-            }
-
-            .timeline-col:first-child .timeline-entry,
-            .timeline-col:last-child .timeline-entry {
-                order: var(--i);
+            /* One column on phones; timeline.js leaves this alone. */
+            .timeline-entry,
+            .timeline-entry:nth-child(odd),
+            .timeline-entry:nth-child(even) {
                 width: 100%;
+                margin-left: 0;
                 padding-left: 44px;
                 padding-right: 0;
                 text-align: left;
             }
 
-            .timeline-col:first-child .timeline-entry::before,
-            .timeline-col:last-child .timeline-entry::before {
+            .timeline-entry:nth-child(odd)::before,
+            .timeline-entry:nth-child(even)::before {
                 left: 11px;
                 right: auto;
             }
 
-            .timeline-col:first-child .timeline-entry::after,
-            .timeline-col:last-child .timeline-entry::after {
+            .timeline-entry:nth-child(odd)::after,
+            .timeline-entry:nth-child(even)::after {
                 left: 25px;
                 right: auto;
                 width: 19px;
@@ -183,63 +187,59 @@
             <h2 class="section-title">Career</h2>
             <div class="timeline">
                 <!-- education:start -- generated by sync.py from cv/cv.tex; edit the .tex, not this -->
-                <div class="timeline-col">
-                    <div class="timeline-entry" style="--i: 1">
-                        <a class="timeline-content" href="https://www.google.com/maps?ll=32.98632846923937,-96.75012493947588&amp;q=32.98632846923937,-96.75012493947588&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
-                            <h3 class="timeline-title">The University of Texas at Dallas</h3>
-                            <p class="timeline-date">August 2025 &mdash; July 2030</p>
-                            <p>PhD in Computer Science<br>
-                               CGPA: 3.75/4.00</p>
-                        </a>
-                    </div>
-                    <div class="timeline-entry" style="--i: 3">
-                        <a class="timeline-content" href="https://www.google.com/maps?ll=23.726584245212717,90.3880954088355&amp;q=23.726584245212717,90.3880954088355&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
-                            <h3 class="timeline-title">Bangladesh University of Engineering and Technology</h3>
-                            <p class="timeline-date">February 2020 &mdash; March 2025</p>
-                            <p>BSc in Computer Science and Engineering<br>
-                               CGPA: 3.94/4.00</p>
-                        </a>
-                    </div>
-                    <div class="timeline-entry" style="--i: 5">
-                        <a class="timeline-content" href="https://www.google.com/maps?ll=23.870422083297104,90.40179965797782&amp;q=23.870422083297104,90.40179965797782&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
-                            <h3 class="timeline-title">Rajuk Uttara Model College</h3>
-                            <p class="timeline-date">April 2013 &mdash; May 2017</p>
-                            <p>SSC in Science<br>
-                               GPA (SSC, JSC): 5.00/5.00</p>
-                        </a>
-                    </div>
-                    <div class="timeline-entry" style="--i: 7">
-                        <a class="timeline-content" href="https://www.google.com/maps?ll=23.78162479041769,90.39449154723938&amp;q=23.78162479041769,90.39449154723938&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
-                            <h3 class="timeline-title">Bangladesh International School</h3>
-                            <p class="timeline-date">January 2007 &mdash; December 2010</p>
-                            <p>School</p>
-                        </a>
-                    </div>
+                <div class="timeline-entry">
+                    <a class="timeline-content" href="https://www.google.com/maps?ll=32.98632846923937,-96.75012493947588&amp;q=32.98632846923937,-96.75012493947588&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
+                        <h3 class="timeline-title">The University of Texas at Dallas</h3>
+                        <p class="timeline-date">August 2025 &mdash; July 2030</p>
+                        <p>PhD in Computer Science<br>
+                           CGPA: 3.75/4.00</p>
+                    </a>
                 </div>
-                <div class="timeline-col">
-                    <div class="timeline-entry" style="--i: 2">
-                        <a class="timeline-content" href="https://www.google.com/maps?ll=23.779561219810084,90.39323221928326&amp;q=23.779561219810084,90.39323221928326&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
-                            <h3 class="timeline-title">Inverse AI</h3>
-                            <p class="timeline-date">February 2020 &mdash; March 2025</p>
-                            <p>Machine Learning Engineer</p>
-                        </a>
-                    </div>
-                    <div class="timeline-entry" style="--i: 4">
-                        <a class="timeline-content" href="https://www.google.com/maps?ll=23.730563801743205,90.42046950314098&amp;q=23.730563801743205,90.42046950314098&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
-                            <h3 class="timeline-title">Notre Dame College</h3>
-                            <p class="timeline-date">July 2017 &mdash; June 2019</p>
-                            <p>HSC in Science<br>
-                               GPA (HSC): 5.00/5.00</p>
-                        </a>
-                    </div>
-                    <div class="timeline-entry" style="--i: 6">
-                        <a class="timeline-content" href="https://www.google.com/maps?ll=23.79317173235511,90.39348216527614&amp;q=23.79317173235511,90.39348216527614&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
-                            <h3 class="timeline-title">Adamjee Cantonment Public School</h3>
-                            <p class="timeline-date">January 2011 &mdash; March 2013</p>
-                            <p>School<br>
-                               GPA (PEC): 5.00/5.00</p>
-                        </a>
-                    </div>
+                <div class="timeline-entry">
+                    <a class="timeline-content" href="https://www.google.com/maps?ll=23.779561219810084,90.39323221928326&amp;q=23.779561219810084,90.39323221928326&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
+                        <h3 class="timeline-title">Inverse AI</h3>
+                        <p class="timeline-date">February 2020 &mdash; March 2025</p>
+                        <p>Machine Learning Engineer</p>
+                    </a>
+                </div>
+                <div class="timeline-entry">
+                    <a class="timeline-content" href="https://www.google.com/maps?ll=23.726584245212717,90.3880954088355&amp;q=23.726584245212717,90.3880954088355&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
+                        <h3 class="timeline-title">Bangladesh University of Engineering and Technology</h3>
+                        <p class="timeline-date">February 2020 &mdash; March 2025</p>
+                        <p>BSc in Computer Science and Engineering<br>
+                           CGPA: 3.94/4.00</p>
+                    </a>
+                </div>
+                <div class="timeline-entry">
+                    <a class="timeline-content" href="https://www.google.com/maps?ll=23.730563801743205,90.42046950314098&amp;q=23.730563801743205,90.42046950314098&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
+                        <h3 class="timeline-title">Notre Dame College</h3>
+                        <p class="timeline-date">July 2017 &mdash; June 2019</p>
+                        <p>HSC in Science<br>
+                           GPA (HSC): 5.00/5.00</p>
+                    </a>
+                </div>
+                <div class="timeline-entry">
+                    <a class="timeline-content" href="https://www.google.com/maps?ll=23.870422083297104,90.40179965797782&amp;q=23.870422083297104,90.40179965797782&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
+                        <h3 class="timeline-title">Rajuk Uttara Model College</h3>
+                        <p class="timeline-date">April 2013 &mdash; May 2017</p>
+                        <p>SSC in Science<br>
+                           GPA (SSC, JSC): 5.00/5.00</p>
+                    </a>
+                </div>
+                <div class="timeline-entry">
+                    <a class="timeline-content" href="https://www.google.com/maps?ll=23.79317173235511,90.39348216527614&amp;q=23.79317173235511,90.39348216527614&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
+                        <h3 class="timeline-title">Adamjee Cantonment Public School</h3>
+                        <p class="timeline-date">January 2011 &mdash; March 2013</p>
+                        <p>School<br>
+                           GPA (PEC): 5.00/5.00</p>
+                    </a>
+                </div>
+                <div class="timeline-entry">
+                    <a class="timeline-content" href="https://www.google.com/maps?ll=23.78162479041769,90.39449154723938&amp;q=23.78162479041769,90.39449154723938&amp;hl=en&amp;t=m&amp;z=15" target="_blank" rel="noopener">
+                        <h3 class="timeline-title">Bangladesh International School</h3>
+                        <p class="timeline-date">January 2007 &mdash; December 2010</p>
+                        <p>School</p>
+                    </a>
                 </div>
                 <!-- education:end -->
             </div>

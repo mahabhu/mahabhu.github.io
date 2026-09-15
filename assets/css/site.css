@@ -7,9 +7,9 @@
    no-JS fallback. Edit gen_palette.py, not these. */
 :root {
     /* palette:start -- written by gen_palette.py; edit the formulas there */
-    --white: #5096D2;    /* every surface that used to be white */
-    --black: #4C74B5;    /* every bar, every piece of text */
-    --select: #4B83BE;   /* hover and current-page states */
+    --white: #D5E2F4;    /* every surface that used to be white */
+    --black: #066FB2;    /* every bar, every piece of text */
+    --select: #8EB5E0;   /* hover and current-page states */
     /* palette:end */
 
     /* Every semantic token resolves to one of the three above -- nothing else. */

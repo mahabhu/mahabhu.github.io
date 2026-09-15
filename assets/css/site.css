@@ -6,9 +6,11 @@
    values here are slot 1 (00:00-00:45), used before the script runs and as the
    no-JS fallback. Edit gen_palette.py, not these. */
 :root {
-    --white: #2F9CD7;    /* cell (8,i)   -- every surface that used to be white */
-    --black: #2E7DC0;    /* cell (8,i-2) -- every bar, every piece of text */
-    --select: #318BC8;   /* cell (8,i-1) -- hover and current-page states */
+    /* palette:start -- written by gen_palette.py; edit the formulas there */
+    --white: #5096D2;    /* every surface that used to be white */
+    --black: #4C74B5;    /* every bar, every piece of text */
+    --select: #4B83BE;   /* hover and current-page states */
+    /* palette:end */
 
     /* Every semantic token resolves to one of the three above -- nothing else. */
     --bg: var(--white);

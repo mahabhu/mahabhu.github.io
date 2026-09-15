@@ -100,10 +100,10 @@ main {
 header {
     background-color: var(--accent);
     color: var(--on-accent);
-    padding: 24px 32px;
+    padding: 24px 40px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;   /* index.html's hero re-centres itself */
     min-height: 96px;
 }
 

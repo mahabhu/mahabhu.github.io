@@ -25,16 +25,51 @@ SLOT_MIN  = 45     # minutes per section  (SLOTS * SLOT_MIN must be 1440)
 # ─────────────────────────────────────────────────────────────────────────────
 #  Helpers available to your formulas.  You do not need to read this part.
 # ─────────────────────────────────────────────────────────────────────────────
-def _load(path):
-    rows = {r[0]: r[1:] for r in csv.reader(open(path)) if r[0] != "ring"}
-    return {int(k): v for k, v in rows.items()}
+_HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
-WHEEL = _load(CSV_PATH)                 # WHEEL[ring][col-1] -> "#RRGGBB"
+def _load(path):
+    """Read the wheel. The first column is the row label; any leading line whose
+    label is not a number (the "row"/"ring" header) is skipped, so renaming that
+    header does not matter. Row labels must be 1..N with nothing missing."""
+    grid, width = {}, None
+    for n, rec in enumerate(csv.reader(open(path)), 1):
+        if not rec or not "".join(rec).strip():
+            continue
+        label, cells = rec[0].strip(), [c.strip() for c in rec[1:]]
+        while cells and cells[-1] == "":      # tolerate trailing commas
+            cells.pop()
+        try:
+            key = int(label)
+        except ValueError:
+            if grid:
+                sys.exit("%s line %d: row label %r is not a number" % (path, n, label))
+            continue                          # header line
+        if width is None:
+            width = len(cells)
+        elif len(cells) != width:
+            sys.exit("%s line %d: row %d has %d colours, but row 1 has %d"
+                     % (path, n, key, len(cells), width))
+        for col, c in enumerate(cells, 1):
+            if not _HEX.match(c):
+                sys.exit("%s line %d: cell (%d,%d) is %r; expected '#RRGGBB'"
+                         % (path, n, key, col, c))
+        if key in grid:
+            sys.exit("%s line %d: row %d appears twice" % (path, n, key))
+        grid[key] = cells
+    if not grid:
+        sys.exit("%s: no data rows found" % path)
+    missing = set(range(1, max(grid) + 1)) - set(grid)
+    if missing:
+        sys.exit("%s: row labels must run 1..%d with none missing; missing %s"
+                 % (path, max(grid), sorted(missing)))
+    return grid
+
+WHEEL = _load(CSV_PATH)                 # WHEEL[row][col-1] -> "#RRGGBB"
 N_RINGS, N_COLS = len(WHEEL), len(WHEEL[1])
 
 def cell(ring, col):
-    """The wheel cell at (ring, col). Both wrap, and both are 1-based, so
-    cell(8, 0) is column 32 and cell(8, 33) is column 1."""
+    """The wheel cell at (ring, col). Both wrap, and both are 1-based, so with
+    a 30x32 wheel cell(8, 0) is column 32 and cell(31, 5) is row 1."""
     ring = ((int(ring) - 1) % N_RINGS) + 1
     return WHEEL[ring][(int(col) - 1) % N_COLS]
 
@@ -118,9 +153,9 @@ def best_contrast(against, candidates):
 #  one "#RRGGBB" string. They may return wheel cells or any colour you compute.
 #
 #  Available to you:
-#    cell(ring, col)        a wheel cell; ring 1-10, col 1-32, both wrap
+#    cell(ring, col)        a wheel cell; both 1-based, both wrap
 #    WHEEL[ring][col-1]     the raw grid, if you want to loop over it
-#    N_RINGS, N_COLS        10 and 32
+#    N_RINGS, N_COLS        the wheel's size (printed on each run)
 #    SLOTS, SLOT_MIN        32 and 45
 #
 #    lightness(h)           how light it looks, 0.0-1.0
@@ -139,15 +174,15 @@ def best_contrast(against, candidates):
 
 def white(i):
     """Every surface that used to be white: page, cards, text on the bars."""
-    return cell(1, i)
+    return cell(5, i)
 
 def black(i):
     """Every bar and every piece of text."""
-    return cell(10, i - 1)
+    return cell(21, i)
 
 def select(i):
     """Hover, and the current page's sidebar button."""
-    return cell(5, i)
+    return cell(11, i)
 
 # ═════════════════════════════════════════════════════════════════════════════
 #  END OF YOUR FORMULAS -- the rest just validates, reports and writes files.
@@ -172,6 +207,7 @@ def build():
     return out
 
 def report(table):
+    print("wheel: %d rows x %d columns from %s\n" % (N_RINGS, N_COLS, CSV_PATH))
     print("slot  window       white    black    select     text  hover  swatch")
     worst, passing = 99.0, 0
     for i, (w, b, s) in enumerate(table, 1):

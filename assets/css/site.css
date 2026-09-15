@@ -8,8 +8,8 @@
 :root {
     /* palette:start -- written by gen_palette.py; edit the formulas there */
     --white: #D5E2F4;    /* every surface that used to be white */
-    --black: #066FB2;    /* every bar, every piece of text */
-    --select: #8EB5E0;   /* hover and current-page states */
+    --black: #1C4B70;    /* every bar, every piece of text */
+    --select: #66A0D7;   /* hover and current-page states */
     /* palette:end */
 
     /* Every semantic token resolves to one of the three above -- nothing else. */

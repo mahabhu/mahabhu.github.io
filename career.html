@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="assets/css/site.css">
+    <script src="assets/js/palette.js"></script>
     <style>
         /* ---------- Timeline ---------- */
         .timeline {
@@ -51,7 +52,7 @@
             position: absolute;
             width: 14px;
             height: 14px;
-            background-color: #fff;
+            background-color: var(--white);
             border: 3px solid var(--accent);
             border-radius: 50%;
             top: 18px;
@@ -69,6 +70,7 @@
         }
 
         .timeline-content:hover {
+            background-color: var(--select);
             transform: translateY(-2px);
             box-shadow: var(--shadow-hover);
         }

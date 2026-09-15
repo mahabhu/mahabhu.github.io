@@ -135,19 +135,19 @@ def best_contrast(against, candidates):
 #  edit, re-run, and read the contrast column to see if it worked.
 # ═════════════════════════════════════════════════════════════════════════════
 
-RING = 8
+# RING = 8
 
 def white(i):
     """Every surface that used to be white: page, cards, text on the bars."""
-    return cell(RING-1, i)
+    return cell(1, i)
 
 def black(i):
     """Every bar and every piece of text."""
-    return cell(RING+1, i - 2)
+    return cell(10, i - 1)
 
 def select(i):
     """Hover, and the current page's sidebar button."""
-    return cell(RING, i - 1)
+    return cell(5, i)
 
 # ═════════════════════════════════════════════════════════════════════════════
 #  END OF YOUR FORMULAS -- the rest just validates, reports and writes files.

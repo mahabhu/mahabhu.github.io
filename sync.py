@@ -62,6 +62,8 @@ LOGOS = {
     "bangladesh university of engineering and technology": "assets/imgs/logos/buet.png",
     "notre dame college": "assets/imgs/logos/ndc.png",
     "rajuk uttara model college": "assets/imgs/logos/rumc.png",
+    "adamjee cantonment public school": "assets/imgs/logos/acps.png",
+    "bangladesh international school": "assets/imgs/logos/bisc.png",
 }
 
 # A bare "lat,lon" line inside an entry is the place's location, not body text.

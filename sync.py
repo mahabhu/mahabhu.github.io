@@ -54,6 +54,16 @@ INDENT = " " * 16  # entries sit inside <main><section><div class="timeline">
 # on the degree line is dropped. Flip to True to carry the bold over.
 BOLD_DEGREE = False
 
+# Card logos, keyed by institution name (matched through norm(), so case and
+# spacing do not matter). A place with no entry here renders without a logo.
+LOGOS = {
+    "the university of texas at dallas": "assets/imgs/logos/utd.png",
+    "inverse ai": "assets/imgs/logos/inverseai.png",
+    "bangladesh university of engineering and technology": "assets/imgs/logos/buet.png",
+    "notre dame college": "assets/imgs/logos/ndc.png",
+    "rajuk uttara model college": "assets/imgs/logos/rumc.png",
+}
+
 # A bare "lat,lon" line inside an entry is the place's location, not body text.
 # It is pulled out of the tile and turned into a Google Maps link on the card.
 COORD_RE = re.compile(r"^(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$")
@@ -282,9 +292,14 @@ def render(entries: list[Entry]) -> str:
     list in .tex order and the alternating left/right layout is done in CSS.
     assets/js/timeline.js then packs the cards vertically without reordering
     them; with JS off the list still renders correctly, just more loosely.
+
+    The text sits in its own box so the logo can be flexed to whichever side is
+    away from the stem. The logo is decorative -- the institution name is right
+    beside it -- so its alt text is deliberately empty.
     """
     out: list[str] = []
     for e in entries:
+        logo = LOGOS.get(norm(e.institution))
         out.append('%s<div class="timeline-entry">' % INDENT)
         url = e.map_url
         if url:
@@ -293,12 +308,17 @@ def render(entries: list[Entry]) -> str:
                        % (INDENT, url.replace("&", "&amp;")))
         else:
             out.append('%s    <div class="timeline-content">' % INDENT)
-        out.append('%s        <h3 class="timeline-title">%s</h3>' % (INDENT, e.institution))
-        out.append('%s        <p class="timeline-date">%s</p>' % (INDENT, e.dates))
+        out.append('%s        <div class="timeline-text">' % INDENT)
+        out.append('%s            <h3 class="timeline-title">%s</h3>' % (INDENT, e.institution))
+        out.append('%s            <p class="timeline-date">%s</p>' % (INDENT, e.dates))
         lines = e.lines if BOLD_DEGREE else [strip_bold(l) for l in e.lines]
         if lines:
-            body = ("<br>\n%s" % (INDENT + " " * 11)).join(lines)
-            out.append('%s        <p>%s</p>' % (INDENT, body))
+            body = ("<br>\n%s" % (INDENT + " " * 15)).join(lines)
+            out.append('%s            <p>%s</p>' % (INDENT, body))
+        out.append('%s        </div>' % INDENT)
+        if logo:
+            out.append('%s        <img class="timeline-logo" src="%s" alt="" loading="lazy">'
+                       % (INDENT, logo))
         out.append('%s    </%s>' % (INDENT, "a" if url else "div"))
         out.append('%s</div>' % INDENT)
     return "\n".join(out)

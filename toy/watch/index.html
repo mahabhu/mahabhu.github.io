@@ -11,7 +11,7 @@
     html, body {
       margin: 0;
       padding: 0;
-      height: 100%;
+      min-height: 100%;
       background: #0f0f0f;
       color: #e6e6e6;
       font-family: 'Ubuntu Mono', 'JetBrains Mono', monospace;
@@ -21,22 +21,59 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      position: relative;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding: 24px 24px 72px;
     }
 
-    #time {
+    #watches {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      max-width: 1200px;
+    }
+
+    .watch {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px 16px;
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+    }
+
+    .watch .time {
       font-size: 3rem;
       letter-spacing: 0.15em;
       user-select: none;
       cursor: pointer;
+      line-height: 1;
     }
 
-    #controls {
-      position: fixed;
-      bottom: 16px;
-      right: 16px;
+    .watch .buttons {
       display: flex;
       gap: 8px;
+    }
+
+    .watch .close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      padding: 0 4px;
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .watch .close:hover {
+      color: #e6e6e6;
+      background: none;
     }
 
     button {
@@ -56,77 +93,139 @@
     button:active {
       background: #3a3a3a;
     }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    button:disabled:hover {
+      background: #1e1e1e;
+    }
+
+    #addBar {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #count {
+      color: #555;
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
 
-  <div id="time" title="click or press space to start/stop">00:00:00</div>
-  <div id="controls">
-    <button id="toggleBtn">Start</button>
-    <button id="resetBtn">Reset</button>
+  <div id="watches"></div>
+
+  <div id="addBar">
+    <span id="count"></span>
+    <button id="addBtn">+ Add</button>
   </div>
 
   <script>
-  const timeEl = document.getElementById("time");
-  const toggleBtn = document.getElementById("toggleBtn");
-  const resetBtn = document.getElementById("resetBtn");
-
-  let running = false;
-  let startedAt = 0;   // timestamp when the current run began
-  let elapsed = 0;     // ms accumulated from previous runs
-  let timer = null;
+  const MAX = 25;
+  const container = document.getElementById("watches");
+  const addBtn = document.getElementById("addBtn");
+  const countEl = document.getElementById("count");
 
   function pad(n) {
     return n.toString().padStart(2, "0");
   }
 
-  function render() {
-    const total = elapsed + (running ? Date.now() - startedAt : 0);
-    const s = Math.floor(total / 1000);
-    const hh = Math.floor(s / 3600);
-    const mm = Math.floor((s % 3600) / 60);
-    const ss = s % 60;
-    timeEl.textContent = `${pad(hh)}:${pad(mm)}:${pad(ss)}`;
-  }
+  function createWatch() {
+    const el = document.createElement("div");
+    el.className = "watch";
+    el.innerHTML = `
+      <button class="close" title="remove">×</button>
+      <div class="time" title="click to start/stop">00:00:00</div>
+      <div class="buttons">
+        <button class="toggle">Start</button>
+        <button class="reset">Reset</button>
+      </div>
+    `;
 
-  function start() {
-    if (running) return;
-    running = true;
-    startedAt = Date.now();
-    timer = setInterval(render, 200);
-    toggleBtn.textContent = "Stop";
-  }
+    const timeEl = el.querySelector(".time");
+    const toggleBtn = el.querySelector(".toggle");
+    const resetBtn = el.querySelector(".reset");
+    const closeBtn = el.querySelector(".close");
 
-  function stop() {
-    if (!running) return;
-    running = false;
-    elapsed += Date.now() - startedAt;
-    clearInterval(timer);
-    timer = null;
+    let running = false;
+    let startedAt = 0;   // timestamp when the current run began
+    let elapsed = 0;     // ms accumulated from previous runs
+    let timer = null;
+
+    function render() {
+      const total = elapsed + (running ? Date.now() - startedAt : 0);
+      const s = Math.floor(total / 1000);
+      const hh = Math.floor(s / 3600);
+      const mm = Math.floor((s % 3600) / 60);
+      const ss = s % 60;
+      timeEl.textContent = `${pad(hh)}:${pad(mm)}:${pad(ss)}`;
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      startedAt = Date.now();
+      timer = setInterval(render, 200);
+      toggleBtn.textContent = "Stop";
+    }
+
+    function stop() {
+      if (!running) return;
+      running = false;
+      elapsed += Date.now() - startedAt;
+      clearInterval(timer);
+      timer = null;
+      render();
+      toggleBtn.textContent = "Start";
+    }
+
+    function toggle() {
+      running ? stop() : start();
+    }
+
+    function reset() {
+      stop();
+      elapsed = 0;
+      render();
+    }
+
+    function remove() {
+      stop();
+      el.remove();
+      updateCount();
+    }
+
+    toggleBtn.addEventListener("click", toggle);
+    resetBtn.addEventListener("click", reset);
+    timeEl.addEventListener("click", toggle);
+    closeBtn.addEventListener("click", remove);
+
     render();
-    toggleBtn.textContent = "Start";
+    return el;
   }
 
-  function toggle() {
-    running ? stop() : start();
+  function updateCount() {
+    const n = container.children.length;
+    countEl.textContent = `${n} / ${MAX}`;
+    addBtn.disabled = n >= MAX;
   }
 
-  function reset() {
-    stop();
-    elapsed = 0;
-    render();
+  function addWatch() {
+    if (container.children.length >= MAX) return;
+    container.appendChild(createWatch());
+    updateCount();
   }
 
-  toggleBtn.addEventListener("click", toggle);
-  resetBtn.addEventListener("click", reset);
-  timeEl.addEventListener("click", toggle);
+  addBtn.addEventListener("click", addWatch);
 
-  document.addEventListener("keydown", e => {
-    if (e.code === "Space") { e.preventDefault(); toggle(); }
-    else if (e.key === "r" || e.key === "R") reset();
-  });
-
-  render();
+  addWatch();
 </script>
 
 </body>

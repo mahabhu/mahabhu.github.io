@@ -1,0 +1,5 @@
+.venv/
+names.txt
+results.csv
+__pycache__/
+urlcheck_seen.txt
